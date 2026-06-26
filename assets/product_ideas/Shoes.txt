@@ -1,0 +1,100 @@
+1. Sneakers
+2. Boots
+3. Sandals
+4. High heels
+5. Flats
+6. Wedges
+7. Loafers
+8. Oxfords
+9. Mules
+10. Espadrilles
+11. Slides
+12. Flip flops
+13. Ankle boots
+14. Combat boots
+15. Chelsea boots
+16. Cowboy boots
+17. Rain boots
+18. Snow boots
+19. Platform heels
+20. Stiletto heels
+21. Block heels
+22. Kitten heels
+23. Ballet flats
+24. Mary Jane shoes
+25. T-strap shoes
+26. Peep toe shoes
+27. Pointed toe shoes
+28. Round toe shoes
+29. Square toe shoes
+30. Wingtip shoes
+31. Brogues
+32. Boat shoes
+33. Driving shoes
+34. Slip-on shoes
+35. Lace-up shoes
+36. Velcro shoes
+37. Buckle shoes
+38. Zipper shoes
+39. Fur-lined shoes
+40. Faux fur shoes
+41. Leather shoes
+42. Suede shoes
+43. Patent leather shoes
+44. Metallic shoes
+45. Glitter shoes
+46. Embellished shoes
+47. Printed shoes
+48. Striped shoes
+49. Polka dot shoes
+50. Floral shoes
+51. Animal print shoes
+52. Neon shoes
+53. Pastel shoes
+54. Earth tone shoes
+55. Black shoes
+56. White shoes
+57. Red shoes
+58. Blue shoes
+59. Green shoes
+60. Yellow shoes
+61. Orange shoes
+62. Pink shoes
+63. Purple shoes
+64. Brown shoes
+65. Grey shoes
+66. Beige shoes
+67. Gold shoes
+68. Silver shoes
+69. Rose gold shoes
+70. Copper shoes
+71. Bronze shoes
+72. Wedge sandals
+73. Gladiator sandals
+74. Thong sandals
+75. Slide sandals
+76. Strappy sandals
+77. Slingback sandals
+78. Peep toe sandals
+79. Platform sandals
+80. Flat sandals
+81. Heeled sandals
+82. Lace-up sandals
+83. Tassel sandals
+84. Fringe sandals
+85. Cork sandals
+86. Espadrille sandals
+87. Jelly sandals
+88. Pool slides
+89. Shower slides
+90. Athletic shoes
+91. Running shoes
+92. Walking shoes
+93. Cross-training shoes
+94. Basketball shoes
+95. Tennis shoes
+96. Golf shoes
+97. Skate shoes
+98. Hiking shoes
+99. Trail running shoes
+100. Water shoes

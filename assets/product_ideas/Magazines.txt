@@ -1,0 +1,100 @@
+1. Fashion Magazines
+2. Sports Magazines
+3. Cooking Magazines
+4. Travel Magazines
+5. Fitness Magazines
+6. Celebrity Magazines
+7. Home Decor Magazines
+8. Business Magazines
+9. Health Magazines
+10. Music Magazines
+11. Gaming Magazines
+12. Art Magazines
+13. Science Magazines
+14. Nature Magazines
+15. Photography Magazines
+16. Technology Magazines
+17. DIY Magazines
+18. Parenting Magazines
+19. Teen Magazines
+20. Men's Magazines
+21. Women's Magazines
+22. Car Magazines
+23. Political Magazines
+24. History Magazines
+25. News Magazines
+26. Entertainment Magazines
+27. Fitness and Health Magazines
+28. Food and Wine Magazines
+29. Home and Garden Magazines
+30. Lifestyle Magazines
+31. Motorcycle Magazines
+32. Outdoor Magazines
+33. Pet Magazines
+34. Science Fiction Magazines
+35. Sports Illustrated Magazines
+36. Time Magazine
+37. Vogue Magazine
+38. National Geographic Magazine
+39. Rolling Stone Magazine
+40. People Magazine
+41. Cosmopolitan Magazine
+42. GQ Magazine
+43. Men's Health Magazine
+44. Women's Health Magazine
+45. Better Homes and Gardens Magazine
+46. Martha Stewart Living Magazine
+47. Architectural Digest Magazine
+48. Bon Appétit Magazine
+49. Consumer Reports Magazine
+50. Forbes Magazine
+51. Fortune Magazine
+52. Harvard Business Review Magazine
+53. Inc. Magazine
+54. Money Magazine
+55. Popular Science Magazine
+56. Scientific American Magazine
+57. Smithsonian Magazine
+58. The Economist Magazine
+59. The New Yorker Magazine
+60. The Wall Street Journal Magazine
+61. Wired Magazine
+62. Yoga Journal Magazine
+63. Backpacker Magazine
+64. Field & Stream Magazine
+65. Golf Digest Magazine
+66. Runner's World Magazine
+67. Sports Illustrated Kids Magazine
+68. Teen Vogue Magazine
+69. Seventeen Magazine
+70. Boys' Life Magazine
+71. Girls' Life Magazine
+72. Car and Driver Magazine
+73. Motor Trend Magazine
+74. Road & Track Magazine
+75. American History Magazine
+76. Archaeology Magazine
+77. Discover Magazine
+78. National Wildlife Magazine
+79. Popular Mechanics Magazine
+80. Popular Photography Magazine
+81. Prevention Magazine
+82. Psychology Today Magazine
+83. Reader's Digest Magazine
+84. Real Simple Magazine
+85. Shape Magazine
+86. Smithsonian Magazine
+87. Sunset Magazine
+88. Taste of Home Magazine
+89. The Family Handyman Magazine
+90. The Oprah Magazine
+91. Time Out Magazine
+92. Travel + Leisure Magazine
+93. Vanity Fair Magazine
+94. Vegetarian Times Magazine
+95. Wine Spectator Magazine
+96. Women's Day Magazine
+97. Working Mother Magazine
+98. Yoga International Magazine
+99. Yoga Journal Magazine
+100. Zoobooks Magazine

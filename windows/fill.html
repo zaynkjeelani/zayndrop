@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>zayndrop Fill</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0d0f; --bg2: #13151a; --bg3: #1c1f26;
+      --border: #242830; --border2: #313744;
+      --text: #dde2ec; --text2: #6e7890; --text3: #363d4d;
+      --accent: #00d4aa; --accent2: #00a882;
+      --warn: #f0a040; --danger: #e84545; --blue: #4a8ff0;
+      --r: 4px; --font: 'DM Mono', monospace; --font-d: 'DM Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 12px; overflow: hidden; }
+    .app { display: flex; height: 100vh; flex-direction: column; }
+
+    /* Header */
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 52px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; -webkit-app-region: drag; }
+    .header-left { display: flex; align-items: center; gap: 10px; -webkit-app-region: no-drag; }
+    .logo { font-family: var(--font-d); font-size: 18px; font-weight: 800; color: var(--accent); }
+    .logo-sub { font-size: 9px; letter-spacing: 0.14em; color: var(--text3); }
+    .header-stats { display: flex; gap: 20px; -webkit-app-region: no-drag; }
+    .hstat { text-align: center; }
+    .hstat-val { font-family: var(--font-d); font-size: 20px; font-weight: 700; }
+    .hstat-val.warn { color: var(--warn); }
+    .hstat-val.accent { color: var(--accent); }
+    .hstat-label { font-size: 8px; letter-spacing: 0.1em; color: var(--text3); }
+    .header-actions { display: flex; gap: 8px; -webkit-app-region: no-drag; }
+
+    /* Buttons */
+    .btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); cursor: pointer; font-family: var(--font-d); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; padding: 7px 16px; transition: all 0.15s; white-space: nowrap; }
+    .btn:hover:not(:disabled) { border-color: var(--text2); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #0c0d0f; }
+    .btn.primary:hover:not(:disabled) { background: var(--accent2); }
+    .btn.danger { border-color: var(--danger); color: var(--danger); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-sm { background: none; border: 1px solid var(--border); border-radius: var(--r); color: var(--text2); cursor: pointer; font-family: var(--font); font-size: 10px; padding: 3px 8px; transition: all 0.15s; }
+    .btn-sm:hover { color: var(--text); border-color: var(--border2); }
+
+    /* Main layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Orders panel */
+    .orders-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+    .orders-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .filter-group { display: flex; gap: 4px; }
+    .fchip { background: none; border: 1px solid var(--border); border-radius: 2px; color: var(--text3); cursor: pointer; font-family: var(--font); font-size: 9px; letter-spacing: 0.08em; padding: 3px 8px; transition: all 0.15s; }
+    .fchip:hover { color: var(--text2); border-color: var(--border2); }
+    .fchip.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,170,0.06); }
+    .search-input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); color: var(--text); font-family: var(--font); font-size: 11px; padding: 6px 10px; outline: none; width: 180px; }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--text3); }
+
+    /* Orders table */
+    .orders-table-wrap { flex: 1; overflow-y: auto; }
+    .orders-table { width: 100%; border-collapse: collapse; }
+    .orders-table th { background: var(--bg2); border-bottom: 1px solid var(--border); color: var(--text3); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; padding: 9px 12px; text-align: left; text-transform: uppercase; position: sticky; top: 0; z-index: 1; }
+    .orders-table td { border-bottom: 1px solid var(--border); padding: 9px 12px; vertical-align: middle; font-size: 11px; }
+    .orders-table tr:hover td { background: var(--bg2); cursor: pointer; }
+    .orders-table tr.selected td { background: rgba(0,212,170,0.05); }
+    .cell-id { font-size: 10px; color: var(--text2); }
+    .cell-title { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .cell-price { font-family: var(--font-d); font-size: 14px; font-weight: 700; }
+    .cell-profit { font-size: 10px; color: var(--accent); }
+    .badge { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 2px; white-space: nowrap; }
+    .badge-pending  { background: rgba(240,160,64,0.1); color: var(--warn); border: 1px solid rgba(240,160,64,0.3); }
+    .badge-ordered  { background: rgba(0,212,170,0.1); color: var(--accent); border: 1px solid rgba(0,212,170,0.3); }
+    .badge-shipped  { background: rgba(110,120,144,0.1); color: var(--text2); border: 1px solid rgba(110,120,144,0.3); }
+    .badge-error    { background: rgba(232,69,69,0.1); color: var(--danger); border: 1px solid rgba(232,69,69,0.3); }
+    .row-actions { display: flex; gap: 4px; }
+    .row-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text2); cursor: pointer; font-family: var(--font); font-size: 9px; padding: 3px 7px; transition: all 0.15s; }
+    .row-btn:hover { color: var(--text); }
+    .row-btn.fulfill { border-color: var(--accent); color: var(--accent); }
+    .row-btn.danger { border-color: var(--danger); color: var(--danger); }
+
+    /* Scan panel */
+    .scan-panel { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .scan-config { padding: 14px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .config-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; display: block; }
+    .pipeline-step { display: flex; align-items: flex-start; gap: 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; cursor: pointer; transition: border-color 0.15s; }
+    .pipeline-step:hover { border-color: var(--border2); }
+    .pipeline-step input { accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+    .step-info { flex: 1; }
+    .step-name { font-size: 11px; color: var(--text); margin-bottom: 1px; }
+    .step-desc { font-size: 9px; color: var(--text3); }
+    .filter-checks { display: flex; flex-direction: column; gap: 4px; }
+    .filter-check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); cursor: pointer; }
+    .filter-check input { accent-color: var(--accent); }
+    .run-btn { background: var(--accent); border: none; border-radius: var(--r); color: #0c0d0f; cursor: pointer; font-family: var(--font-d); font-size: 14px; font-weight: 700; letter-spacing: 0.04em; padding: 11px; width: 100%; transition: background 0.15s; }
+    .run-btn:hover:not(:disabled) { background: var(--accent2); }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Scan log */
+    .scan-log-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .log-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
+    .log-title { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; }
+    .scan-log { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 0; font-size: 10px; }
+    .log-line { display: flex; gap: 6px; padding: 3px 0; border-bottom: 1px solid rgba(36,40,48,0.4); }
+    .log-time { color: var(--text3); font-size: 9px; flex-shrink: 0; width: 50px; padding-top: 1px; }
+    .log-icon { flex-shrink: 0; font-size: 11px; }
+    .log-text { flex: 1; color: var(--text2); line-height: 1.5; }
+    .log-line.success .log-text { color: var(--accent); }
+    .log-line.error .log-text { color: var(--danger); }
+    .log-line.warn .log-text { color: var(--warn); }
+    .log-line.heading .log-text { color: var(--text); font-weight: 700; font-size: 11px; }
+    .log-line.info .log-text { color: var(--blue); }
+    .log-empty { color: var(--text3); font-size: 10px; padding: 16px 0; text-align: center; }
+
+    /* Tracking modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; width: 420px; padding: 0; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); font-family: var(--font-d); font-size: 16px; font-weight: 700; color: var(--accent); }
+    .modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 16px; }
+    .modal-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-footer { display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--border); }
+    .form-row { display: flex; flex-direction: column; gap: 5px; }
+    .form-label { font-size: 10px; color: var(--text2); letter-spacing: 0.06em; }
+    .text-input, .select-input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); color: var(--text); font-family: var(--font); font-size: 11px; padding: 8px 10px; outline: none; transition: border-color 0.15s; width: 100%; }
+    .text-input:focus, .select-input:focus { border-color: var(--accent); }
+    .text-input::placeholder { color: var(--text3); }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 999; }
+    .toast { background: var(--accent); color: #0c0d0f; font-family: var(--font); font-size: 11px; padding: 9px 16px; border-radius: var(--r); animation: slideIn 0.2s ease; }
+    .toast.error { background: var(--danger); color: #fff; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: var(--border2); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <div>
+        <div class="logo">⬡ zayndrop Fill</div>
+        <div class="logo-sub">ORDER FULFILLMENT</div>
+      </div>
+      <div id="acct-checks" style="display:flex;gap:6px;align-items:center;margin-left:10px;"></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-val warn" id="h-pending">—</div><div class="hstat-label">PENDING</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-orders">—</div><div class="hstat-label">ORDERS</div></div>
+      <div class="hstat" title="Profit from orders with a confirmed Amazon cost, home-sold, or refunded — no guessing"><div class="hstat-val accent" id="h-profit">—</div><div class="hstat-label">CONFIRMED</div></div>
+      <div class="hstat" title="Additional profit from orders still using the 60%-cost estimate — not real yet"><div class="hstat-val" id="h-profit-est" style="color:var(--text2)">—</div><div class="hstat-label">+EST.</div></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" id="login-setup-btn" style="border-color:#4a8ff0;color:#4a8ff0">⚙ Login Setup</button>
+      <button class="btn" id="sync-orders-btn" style="border-color:#a78bfa;color:#a78bfa">⟳ SYNC ORDERS</button>
+      <button class="btn" id="asin-map-btn" style="border-color:#00d4aa;color:#00d4aa">⬡ ASINs</button>
+      <button class="btn" id="verify-shipped-btn" style="border-color:#f0a832;color:#f0a832">✓ VERIFY SHIPPED</button>
+      <label id="auto-sync-label" style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);cursor:pointer;white-space:nowrap" title="Auto-sync Amazon tracking every 6 hours while app is open">
+        <input type="checkbox" id="auto-sync-toggle" /> Auto Sync
+      </label>
+      <button class="btn" id="add-tracking-btn">+ Tracking</button>
+      <button class="btn" id="export-btn">Export CSV</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Orders panel -->
+    <div class="orders-panel">
+      <div class="orders-toolbar">
+        <div class="filter-group">
+          <button class="fchip active" data-status="all">All</button>
+          <button class="fchip" data-status="pending">Pending</button>
+          <button class="fchip" data-status="ordered">Ordered</button>
+          <button class="fchip" data-status="shipped">Shipped</button>
+          <button class="fchip" data-status="error">Error</button>
+        </div>
+        <input class="search-input" id="order-search" placeholder="Search orders..." />
+      </div>
+      <div class="orders-table-wrap">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Order ID</th><th>Acct</th><th>Item</th><th>Qty</th><th>Buyer</th>
+              <th>Sale</th><th>Profit</th><th>Status</th>
+              <th>Tracking</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Scan panel -->
+    <div class="scan-panel">
+      <div class="scan-config">
+        <div>
+          <span class="config-label">eBay filters</span>
+          <div class="filter-checks">
+            <label class="filter-check"><input type="checkbox" id="filter-awaiting" checked /> Awaiting shipment</label>
+            <label class="filter-check"><input type="checkbox" id="filter-all" /> All orders</label>
+            <label class="filter-check"><input type="checkbox" id="filter-paid" /> Paid & shipped</label>
+          </div>
+        </div>
+        <div>
+          <span class="config-label">Automation</span>
+          <div class="filter-checks">
+            <label class="filter-check"><input type="checkbox" id="auto-order" checked /> Auto order (place Amazon orders)</label>
+            <label class="filter-check"><input type="checkbox" id="auto-ship" checked /> Auto mark as shipped</label>
+            <label class="filter-check"><input type="checkbox" id="auto-message" checked /> Auto message buyers</label>
+          </div>
+        </div>
+        <button class="run-btn" id="automate-btn">▶ AUTOMATE</button>
+        <button class="run-btn" id="sync-tracking-btn" style="background:none;border:1px solid var(--accent);color:var(--accent);">⟳ SYNC TRACKING</button>
+        <button class="run-btn" id="sync-tracking-ali-btn" style="background:none;border:1px solid #e8490f;color:#e8490f;">⟳ ALIEXPRESS TRACKING</button>
+      </div>
+
+      <div class="scan-log-wrap">
+        <div class="log-header">
+          <span class="log-title">Scan Log</span>
+          <button class="btn-sm" id="clear-log-btn">Clear</button>
+        </div>
+        <div class="scan-log" id="scan-log">
+          <div class="log-empty">Run a scan to see live progress here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tracking modal -->
+<div class="modal-overlay hidden" id="tracking-modal">
+  <div class="modal">
+    <div class="modal-header"><span>Add Tracking</span><button class="modal-close" id="close-tracking">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label class="form-label">Order</label><select class="select-input" id="track-order-select"><option value="">Select order...</option></select></div>
+      <div class="form-row"><label class="form-label">Tracking number</label><input class="text-input" id="track-number" placeholder="Enter tracking number..." /></div>
+      <div class="form-row"><label class="form-label">Carrier</label>
+        <select class="select-input" id="track-carrier">
+          <option value="USPS">USPS</option><option value="UPS">UPS</option>
+          <option value="FedEx">FedEx</option><option value="Amazon">Amazon Logistics</option><option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn primary" id="save-tracking-btn">Save Tracking</button>
+      <button class="btn" id="cancel-tracking-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASIN Map modal -->
+<div class="modal-overlay hidden" id="asin-modal">
+  <div class="modal" style="width:540px">
+    <div class="modal-header"><span>ASIN Map</span><button class="modal-close" id="close-asin">✕</button></div>
+    <div class="modal-body" style="gap:16px">
+      <div style="font-size:10px;color:var(--text2)">Map eBay item IDs to Amazon ASINs or AliExpress item IDs. The pipeline uses this to know where to order from for each eBay listing.</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div class="form-row" style="flex:1;min-width:120px"><label class="form-label">eBay Item ID</label><input class="text-input" id="asin-listing-id" placeholder="e.g. 123456789012" /></div>
+        <div class="form-row" style="flex:0 0 auto"><label class="form-label">Source</label>
+          <select class="text-input" id="asin-source" style="padding:4px 6px">
+            <option value="amazon">Amazon</option>
+            <option value="aliexpress">AliExpress</option>
+          </select>
+        </div>
+        <div class="form-row" style="flex:1;min-width:120px" id="asin-asin-row"><label class="form-label">Amazon ASIN</label><input class="text-input" id="asin-asin" placeholder="e.g. B0DLSRTWN2" /></div>
+        <div class="form-row" id="asin-ali-row" style="flex:1;min-width:140px;display:none"><label class="form-label">AliExpress Item ID</label><input class="text-input" id="asin-ali-id" placeholder="e.g. 3256812022637081" /></div>
+        <div class="form-row" style="flex:1;min-width:100px"><label class="form-label">Note (optional)</label><input class="text-input" id="asin-title" placeholder="e.g. 65W Charger" /></div>
+        <button class="btn primary" id="add-asin-btn" style="flex-shrink:0;margin-bottom:0">Add</button>
+      </div>
+      <div style="overflow-y:auto;max-height:260px">
+        <table class="orders-table" style="font-size:11px">
+          <thead><tr><th>eBay Item ID</th><th>Source</th><th>ASIN / AliExpress ID</th><th>Note</th><th></th></tr></thead>
+          <tbody id="asin-map-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn primary" id="auto-map-btn">⚡ Auto-map from Amazon orders</button>
+      <button class="btn" id="close-asin-footer">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+let allOrders = [];
+let currentFilter = 'all';
+let currentSearch = '';
+
+// ── Account checkboxes ────────────────────────────────────────
+async function initAccountChecks() {
+  const wrap = document.getElementById('acct-checks');
+  try {
+    const accounts = await window.zayn.accountsGet();
+    wrap.innerHTML = accounts.map((a, i) => `
+      <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);cursor:pointer;white-space:nowrap;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:3px 8px">
+        <input type="checkbox" class="acct-check" value="${a.id}" checked style="accent-color:var(--accent)" />
+        ${a.name || ('Acct ' + (i + 1))}
+      </label>
+    `).join('');
+  } catch (_) {
+    wrap.innerHTML = `<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:3px 8px"><input type="checkbox" class="acct-check" value="acc1" checked style="accent-color:var(--accent)" /> Account 1</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:3px 8px"><input type="checkbox" class="acct-check" value="acc2" checked style="accent-color:var(--accent)" /> Account 2</label>`;
+  }
+  wrap.addEventListener('change', loadOrders);
+}
+
+function getSelectedAccounts() {
+  const checked = [...document.querySelectorAll('.acct-check:checked')].map(cb => cb.value);
+  return checked.length ? checked : ['acc1'];
+}
+
+// For single-account ops (login setup, ASIN map) — use first checked
+function getPrimaryAccount() { return getSelectedAccounts()[0]; }
+function getAccOpts() { return { accountId: getPrimaryAccount() }; }
+
+function toast(msg, type = 'ok') {
+  const el = document.createElement('div');
+  el.className = `toast${type === 'error' ? ' error' : ''}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function statusBadge(s) {
+  const labels = { pending: 'PENDING', ordered: 'ORDERED', shipped: 'SHIPPED', error: 'ERROR', cancelled: 'CANCELLED' };
+  return `<span class="badge badge-${s}">${labels[s] || s.toUpperCase()}</span>`;
+}
+
+// Returns { value, confirmed } — confirmed=true means this number is real
+// (real Amazon cost, home-sold, or refunded), not the 60%-cost guess.
+function calcProfit(o) {
+  if (!o.sale_price) return null;
+  if (o.refunded) {
+    // Buyer got their money back; whatever we paid Amazon is a straight loss.
+    // If we don't know the real cost either, it's still an estimate.
+    const cost = o.amazon_cost || o.sale_price * 0.6;
+    return { value: -cost, confirmed: !!o.amazon_cost };
+  }
+  if (o.home_sold) {
+    return { value: o.sale_price * 0.87, confirmed: true };
+  }
+  const cost = o.amazon_cost || o.sale_price * 0.6;
+  return { value: o.sale_price * 0.87 - cost, confirmed: !!o.amazon_cost };
+}
+
+async function renderOrders() {
+  let filtered = allOrders;
+  if (currentFilter !== 'all') filtered = filtered.filter(o => o.fulfill_status === currentFilter);
+  if (currentSearch) {
+    const q = currentSearch.toLowerCase();
+    filtered = filtered.filter(o =>
+      (o.order_id || '').includes(q) || (o.item_title || '').toLowerCase().includes(q) || (o.buyer_name || '').toLowerCase().includes(q)
+    );
+  }
+
+  const pending = allOrders.filter(o => !o.tracking_number && o.fulfill_status !== 'cancelled').length;
+  let confirmedProfit = 0, estimatedProfit = 0;
+  allOrders.forEach(o => {
+    const p = calcProfit(o);
+    if (!p) return;
+    if (p.confirmed) confirmedProfit += p.value;
+    else estimatedProfit += p.value;
+  });
+  document.getElementById('h-pending').textContent = pending;
+  document.getElementById('h-orders').textContent = allOrders.length;
+  document.getElementById('h-profit').textContent = '$' + confirmedProfit.toFixed(0);
+  document.getElementById('h-profit-est').textContent = (estimatedProfit >= 0 ? '+$' : '-$') + Math.abs(estimatedProfit).toFixed(0);
+
+  const tbody = document.getElementById('orders-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">No orders found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(o => {
+    const p = calcProfit(o);
+    const canFulfill = !o.amazon_order_id && o.fulfill_status === 'pending' && o.ship_addr1;
+    const profitTitle = o.refunded ? 'Refunded — buyer kept money back, Amazon cost is a loss'
+      : o.home_sold ? 'Home-sold — 100% margin'
+      : o.amazon_cost ? 'Actual cost: $' + parseFloat(o.amazon_cost).toFixed(2)
+      : 'Estimated — actual Amazon cost not yet captured';
+    const profitText = p ? (p.confirmed ? '$' : '~$') + p.value.toFixed(2) : '—';
+    const acctLabel = o._accountId === 'acc2' ? '<span style="color:#a78bfa;font-weight:700">A2</span>' : '<span style="color:var(--accent);font-weight:700">A1</span>';
+    return `
+      <tr data-id="${o.id}" data-acct="${o._accountId || 'acc1'}">
+        <td><div class="cell-id">${o.order_id}</div><div style="font-size:9px;color:var(--text3)">${o.sale_date || ''}</div></td>
+        <td style="font-size:11px">${acctLabel}</td>
+        <td><span class="cell-title" title="${o.item_title || ''}">${(o.item_title || '').slice(0, 40)}</span><div style="font-size:9px;color:var(--text2)">${o.buyer_name || ''}</div></td>
+        <td><button class="row-btn" data-qty="${o.order_id}" title="Click to change quantity" style="${(o.quantity || 1) > 1 ? 'border-color:var(--warn);color:var(--warn);font-weight:700' : ''}">×${o.quantity || 1}</button></td>
+        <td><div style="font-size:9px;color:var(--text2)">${o.ship_city ? o.ship_city + ', ' + o.ship_state : '<span style=color:var(--warn)>No address</span>'}</div></td>
+        <td><div class="cell-price">$${parseFloat(o.sale_price || 0).toFixed(2)}</div></td>
+        <td><div class="cell-profit" style="${p && p.value < 0 ? 'color:var(--danger)' : ''}" title="${profitTitle}">${profitText}${o.home_sold ? ' <span style="color:var(--warn);font-size:9px">HOME</span>' : ''}${o.refunded ? ' <span style="color:var(--danger);font-size:9px">REFUND</span>' : ''}</div></td>
+        <td>${statusBadge(o.fulfill_status || 'pending')}</td>
+        <td style="font-size:10px;color:${o.tracking_number ? 'var(--accent)' : 'var(--text3)'}">${o.tracking_number || '—'}</td>
+        <td>
+          <div class="row-actions">
+            ${canFulfill ? `<button class="row-btn fulfill" data-fulfill="${o.order_id}">FULFILL</button>` : ''}
+            ${!o.tracking_number ? `<button class="row-btn" data-track="${o.order_id}">+TRACK</button>` : ''}
+            <button class="row-btn" data-homesold="${o.id}" title="Mark as sold to your own warm-up buyer — 100% profit margin" style="${o.home_sold ? 'border-color:var(--warn);color:var(--warn)' : ''}">HOMESOLD</button>
+            <button class="row-btn" data-refunded="${o.id}" title="Mark as refunded — buyer got their money back" style="${o.refunded ? 'border-color:var(--danger);color:var(--danger)' : ''}">REFUNDED</button>
+            <button class="row-btn danger" data-delete="${o.id}">✕</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Wire actions — each row carries data-acct so we know which DB to update
+  tbody.querySelectorAll('[data-fulfill]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const orderId = btn.dataset.fulfill;
+      const accountId = btn.closest('tr').dataset.acct || 'acc1';
+      btn.disabled = true;
+      btn.textContent = '⏳';
+      toast(`Fulfilling #${orderId}…`);
+      try {
+        const result = await window.zayn.fillFulfillSingle(orderId, accountId);
+        if (result?.success) {
+          toast(`✓ Order placed: ${result.amazonOrderId || orderId}`);
+        } else {
+          toast(`✕ ${result?.error || 'Fulfillment failed'}`, 'error');
+        }
+      } catch (err) {
+        toast(`✕ ${err.message}`, 'error');
+      }
+      await loadOrders();
+    });
+  });
+  tbody.querySelectorAll('[data-qty]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const order = allOrders.find(o => o.order_id === btn.dataset.qty);
+      const val = prompt(`Quantity for #${order.order_id}:`, order.quantity || 1);
+      if (val === null) return;
+      const qty = parseInt(val);
+      if (!qty || qty < 1 || qty > 30) { toast('Enter a quantity between 1 and 30', 'error'); return; }
+      await window.zayn.fillUpdateOrder(order.id, { quantity: qty }, order._accountId);
+      await loadOrders();
+      toast(`#${order.order_id} quantity set to ${qty}`);
+    });
+  });
+  tbody.querySelectorAll('[data-track]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sel = document.getElementById('track-order-select');
+      sel.value = btn.dataset.track;
+      // store accountId so save-tracking knows which DB
+      sel.dataset.acct = btn.closest('tr').dataset.acct || 'acc1';
+      document.getElementById('tracking-modal').classList.remove('hidden');
+      document.getElementById('track-number').focus();
+    });
+  });
+  tbody.querySelectorAll('[data-homesold]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const order = allOrders.find(o => String(o.id) === btn.dataset.homesold);
+      const next = order.home_sold ? 0 : 1;
+      await window.zayn.fillUpdateOrder(order.id, { home_sold: next }, order._accountId);
+      await loadOrders();
+      toast(next ? `#${order.order_id} marked home-sold — 100% margin` : `#${order.order_id} unmarked`);
+    });
+  });
+  tbody.querySelectorAll('[data-refunded]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const order = allOrders.find(o => String(o.id) === btn.dataset.refunded);
+      const next = order.refunded ? 0 : 1;
+      await window.zayn.fillUpdateOrder(order.id, { refunded: next }, order._accountId);
+      await loadOrders();
+      toast(next ? `#${order.order_id} marked refunded — counted as a loss` : `#${order.order_id} unmarked`);
+    });
+  });
+  tbody.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('Delete this order?')) return;
+      const accountId = btn.closest('tr').dataset.acct || 'acc1';
+      await window.zayn.db_run({ sql: 'DELETE FROM orders WHERE id = ?', params: [btn.dataset.delete], accountId });
+      await loadOrders();
+    });
+  });
+}
+
+async function loadOrders() {
+  const accountIds = getSelectedAccounts();
+  allOrders = [];
+  for (const accountId of accountIds) {
+    const orders = await window.zayn.fillGetOrders({ accountId });
+    orders.forEach(o => o._accountId = accountId);
+    allOrders.push(...orders);
+  }
+  await renderOrders();
+  // Populate tracking select
+  const noTracking = allOrders.filter(o => !o.tracking_number && o.fulfill_status !== 'cancelled');
+  const sel = document.getElementById('track-order-select');
+  sel.innerHTML = '<option value="">Select order...</option>' +
+    noTracking.map(o => `<option value="${o.order_id}" data-acct="${o._accountId}">${o.order_id} — ${(o.item_title || '').slice(0, 35)}</option>`).join('');
+}
+
+// Filter chips
+document.querySelectorAll('.fchip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.status;
+    renderOrders();
+  });
+});
+
+document.getElementById('order-search').addEventListener('input', e => {
+  currentSearch = e.target.value;
+  renderOrders();
+});
+
+// Automate — single button that runs the fulfillment pipeline on a repeating
+// timer (scrape → address → match → [auto order] → tracking → [auto ship] →
+// [auto message]) until stopped. The three checkboxes gate the side-effecting
+// steps; scrape/address/match/tracking always run since they're read-only.
+let automating = false;
+
+function wireLogStream() {
+  window.zayn.off('scan-log');
+  window.zayn.off('fill-order-updated');
+  window.zayn.on('scan-log', ({ type, text }) => {
+    if (type === 'summary') { loadOrders(); return; }
+    const log = document.getElementById('scan-log');
+    const div = document.createElement('div');
+    div.className = `log-line ${type}`;
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    const icons = { success: '✓', error: '✕', warn: '⚠', info: '→', heading: '⬡' };
+    div.innerHTML = `<span class="log-time">${time}</span><span class="log-icon">${icons[type] || '·'}</span><span class="log-text">${text}</span>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  });
+  window.zayn.on('fill-order-updated', () => loadOrders());
+}
+
+function updateAutomateBtn() {
+  const btn = document.getElementById('automate-btn');
+  if (automating) {
+    btn.textContent = '■ STOP AUTOMATE';
+    btn.style.background = 'var(--danger)';
+  } else {
+    btn.textContent = '▶ AUTOMATE';
+    btn.style.background = 'var(--accent)';
+  }
+}
+
+async function refreshAutomationStatus() {
+  const status = await window.zayn.fillAutomationStatus();
+  automating = !!status.running;
+  updateAutomateBtn();
+  if (automating) wireLogStream();
+}
+
+document.getElementById('automate-btn').addEventListener('click', async () => {
+  if (automating) {
+    await window.zayn.fillStopAutomation();
+    automating = false;
+    updateAutomateBtn();
+    toast('Automation stopped');
+    return;
+  }
+
+  const accountIds = getSelectedAccounts();
+  const options = {
+    ebayFilters: [
+      document.getElementById('filter-awaiting').checked && 'awaiting_ship',
+      document.getElementById('filter-all').checked && 'all',
+      document.getElementById('filter-paid').checked && 'paid_shipped'
+    ].filter(Boolean),
+    scrapeEbay: true,
+    scrapeAddresses: true,
+    matchAmazon: true,
+    fulfill:       document.getElementById('auto-order').checked,
+    pullTracking:  true,
+    markShipped:   document.getElementById('auto-ship').checked,
+    messageBuyers: document.getElementById('auto-message').checked,
+    intervalMinutes: 5,
+    accountIds,
+  };
+
+  wireLogStream();
+  await window.zayn.fillStartAutomation(options);
+  automating = true;
+  updateAutomateBtn();
+  toast(`Automation started — ${accountIds.length > 1 ? accountIds.join(' + ') : accountIds[0]} — every 5 min`);
+});
+
+document.getElementById('sync-tracking-ali-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('sync-tracking-ali-btn');
+  btn.disabled = true;
+  wireLogStream();
+  let totalTracked = 0;
+  for (const accountId of getSelectedAccounts()) {
+    btn.textContent = `⏳ ${accountId}…`;
+    try {
+      const result = await window.zayn.fillSyncTrackingAliExpress({ accountId });
+      totalTracked += result.tracked || 0;
+    } catch (e) {
+      toast(`✕ [${accountId}] ${e.message}`, 'error');
+    }
+  }
+  toast(totalTracked ? `✓ ${totalTracked} orders tracked from AliExpress` : 'No new tracking found on AliExpress');
+  btn.disabled = false;
+  btn.textContent = '⟳ ALIEXPRESS TRACKING';
+  await loadOrders();
+});
+
+document.getElementById('sync-tracking-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('sync-tracking-btn');
+  btn.disabled = true;
+  wireLogStream();
+  let totalTracked = 0;
+  for (const accountId of getSelectedAccounts()) {
+    btn.textContent = `⏳ ${accountId}…`;
+    try {
+      const result = await window.zayn.fillSyncTracking({ accountId });
+      totalTracked += result.tracked || 0;
+    } catch (e) {
+      toast(`✕ [${accountId}] ${e.message}`, 'error');
+    }
+  }
+  toast(totalTracked ? `✓ ${totalTracked} orders tracked` : 'No new tracking found');
+  btn.disabled = false;
+  btn.textContent = '⟳ SYNC TRACKING';
+  await loadOrders();
+});
+
+document.getElementById('clear-log-btn').addEventListener('click', () => {
+  document.getElementById('scan-log').innerHTML = '<div class="log-empty">Log cleared.</div>';
+});
+
+// Tracking modal
+document.getElementById('add-tracking-btn').addEventListener('click', () => {
+  document.getElementById('tracking-modal').classList.remove('hidden');
+});
+document.getElementById('close-tracking').addEventListener('click', () => {
+  document.getElementById('tracking-modal').classList.add('hidden');
+});
+document.getElementById('cancel-tracking-btn').addEventListener('click', () => {
+  document.getElementById('tracking-modal').classList.add('hidden');
+});
+
+document.getElementById('save-tracking-btn').addEventListener('click', async () => {
+  const sel = document.getElementById('track-order-select');
+  const orderId = sel.value;
+  const accountId = sel.dataset.acct || getPrimaryAccount();
+  const tracking = document.getElementById('track-number').value.trim();
+  const carrier = document.getElementById('track-carrier').value;
+  if (!orderId || !tracking) { toast('Select order and enter tracking', 'error'); return; }
+  await window.zayn.fillSaveTracking({ orderId, trackingNumber: tracking, carrier, accountId });
+  document.getElementById('tracking-modal').classList.add('hidden');
+  document.getElementById('track-number').value = '';
+  await loadOrders();
+  toast(`Tracking saved for #${orderId}`);
+});
+
+// Export
+document.getElementById('export-btn').addEventListener('click', () => {
+  const headers = ['Order ID','Item','Buyer','Sale','Profit','Confirmed','Status','Tracking'];
+  const rows = allOrders.map(o => {
+    const p = calcProfit(o);
+    return [
+      o.order_id, `"${(o.item_title||'').replace(/"/g,'""')}"`,
+      `"${(o.buyer_name||'').replace(/"/g,'""')}"`,
+      o.sale_price||'', p ? p.value.toFixed(2) : '', p ? (p.confirmed ? 'yes' : 'no') : '',
+      o.fulfill_status||'', o.tracking_number||''
+    ];
+  });
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `zayndrop-fill-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+});
+
+// Login setup
+document.getElementById('login-setup-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('login-setup-btn');
+  const status = await window.zayn.fillCheckLogin();
+
+  if (status.ebay && status.amazon) {
+    alert('✓ Already logged in to both eBay and Amazon. You\'re ready to scan!');
+    return;
+  }
+
+  const msg = [
+    'Login Setup:',
+    '',
+    status.ebay ? '✓ eBay: logged in' : '✕ eBay: NOT logged in',
+    status.amazon ? '✓ Amazon: logged in' : '✕ Amazon: NOT logged in',
+    '',
+    'Click OK to open the browser. Log in to eBay and/or Amazon, then come back here and click "Done Logging In".'
+  ].join('\n');
+
+  if (!confirm(msg)) return;
+
+  btn.textContent = '⟳ Browser open...';
+  btn.style.borderColor = '#f0a040';
+  btn.style.color = '#f0a040';
+
+  await window.zayn.fillOpenBrowser(getAccOpts());
+
+  // Change button to "Done"
+  btn.textContent = '✓ Done Logging In';
+  btn.style.borderColor = '#00d4aa';
+  btn.style.color = '#00d4aa';
+
+  btn.onclick = async () => {
+    await window.zayn.fillCloseBrowser(getAccOpts());
+    btn.textContent = '⚙ Login Setup';
+    btn.style.borderColor = '#4a8ff0';
+    btn.style.color = '#4a8ff0';
+    btn.onclick = null;
+    toast('Browser closed. Ready to scan!');
+  };
+});
+
+// ASIN map source toggle
+document.getElementById('asin-source').addEventListener('change', function() {
+  const isAli = this.value === 'aliexpress';
+  document.getElementById('asin-asin-row').style.display = isAli ? 'none' : '';
+  document.getElementById('asin-ali-row').style.display = isAli ? '' : 'none';
+});
+
+async function loadAsinMap() {
+  const map = await window.zayn.fillGetAsinMap();
+  const tbody = document.getElementById('asin-map-tbody');
+  if (!map.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No mappings yet</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = map.map(m => {
+    const isAli = m.source === 'aliexpress';
+    const srcLabel = isAli ? `<span style="color:#f0a832">AliExpress</span>` : `<span style="color:var(--accent)">Amazon</span>`;
+    const idVal = isAli ? (m.ali_item_id || '—') : (m.asin || '—');
+    return `<tr>
+      <td style="font-family:var(--font);font-size:10px">${m.listing_id}</td>
+      <td>${srcLabel}</td>
+      <td style="font-size:10px;font-family:var(--font)">${idVal}</td>
+      <td style="color:var(--text2);font-size:10px">${m.title || '—'}</td>
+      <td><button class="row-btn danger" data-del-asin="${m.listing_id}">✕</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('[data-del-asin]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await window.zayn.fillDeleteAsinMap({ listingId: btn.dataset.delAsin });
+      loadAsinMap();
+    });
+  });
+}
+
+// Auto sync toggle — load saved state on init, wire change
+async function initAutoSync() {
+  try {
+    const { enabled } = await window.zayn.fillGetAutoSync();
+    document.getElementById('auto-sync-toggle').checked = !!enabled;
+  } catch (_) {}
+}
+document.getElementById('auto-sync-toggle').addEventListener('change', async function () {
+  await window.zayn.fillSetAutoSync({ enabled: this.checked });
+  toast(this.checked ? 'Auto sync enabled (every 6h)' : 'Auto sync disabled');
+});
+
+// Verify Shipped
+document.getElementById('verify-shipped-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('verify-shipped-btn');
+  btn.disabled = true;
+  wireLogStream();
+  let totalOk = 0, totalMissing = 0;
+  for (const accountId of getSelectedAccounts()) {
+    btn.textContent = `⟳ ${accountId}…`;
+    try {
+      const res = await window.zayn.fillVerifyShipped({ accountId });
+      totalOk += res.ok || 0;
+      totalMissing += res.missing || 0;
+    } catch (e) {
+      toast(`Verify failed [${accountId}]: ` + e.message, 'error');
+    }
+  }
+  if (totalMissing > 0) {
+    toast(`⚠ ${totalMissing} orders shipped on eBay with NO tracking in DB — check Scan Log`, 'error');
+  } else {
+    toast(`✓ All ${totalOk} PAID_SHIPPED orders have tracking`);
+  }
+  btn.disabled = false; btn.textContent = '✓ VERIFY SHIPPED';
+});
+
+document.getElementById('sync-orders-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('sync-orders-btn');
+  btn.disabled = true;
+  wireLogStream();
+  let totals = { ebayImported: 0, mapped: 0, statusUpdated: 0, skipped: 0 };
+  for (const accountId of getSelectedAccounts()) {
+    btn.textContent = `⟳ ${accountId}…`;
+    try {
+      const res = await window.zayn.fillSyncOrders({ accountId });
+      totals.ebayImported += res.ebayImported || 0;
+      totals.mapped += res.mapped || 0;
+      totals.statusUpdated += res.statusUpdated || 0;
+      totals.skipped += res.skipped || 0;
+    } catch (e) {
+      toast(`Sync failed [${accountId}]: ` + e.message, 'error');
+    }
+  }
+  toast(`Synced ${totals.ebayImported} orders · ${totals.mapped} mappings · ${totals.statusUpdated} status updates · ${totals.skipped} unmatched`);
+  await loadOrders();
+  await loadAsinMap();
+  btn.disabled = false; btn.textContent = '⟳ SYNC ORDERS';
+});
+
+document.getElementById('asin-map-btn').addEventListener('click', () => {
+  document.getElementById('asin-modal').classList.remove('hidden');
+  loadAsinMap();
+});
+document.getElementById('close-asin').addEventListener('click', () => document.getElementById('asin-modal').classList.add('hidden'));
+document.getElementById('close-asin-footer').addEventListener('click', () => document.getElementById('asin-modal').classList.add('hidden'));
+
+document.getElementById('auto-map-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('auto-map-btn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Matching buyers...';
+  try {
+    const res = await window.zayn.fillAutoMapAsins(getAccOpts());
+    toast(`Auto-map: ${res.mapped} new mappings, ${res.skipped} unmatched`);
+    await loadAsinMap();
+  } catch (e) {
+    toast('Auto-map failed: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '⚡ Auto-map from Amazon orders';
+});
+
+document.getElementById('add-asin-btn').addEventListener('click', async () => {
+  const listingId = document.getElementById('asin-listing-id').value.trim();
+  const source = document.getElementById('asin-source').value;
+  const asin = source === 'amazon' ? document.getElementById('asin-asin').value.trim().toUpperCase() : '';
+  const aliItemId = source === 'aliexpress' ? document.getElementById('asin-ali-id').value.trim() : '';
+  const title = document.getElementById('asin-title').value.trim();
+  if (!listingId || (source === 'amazon' && !asin) || (source === 'aliexpress' && !aliItemId)) {
+    toast('Enter eBay Item ID and the source product ID', 'error'); return;
+  }
+  await window.zayn.fillMapAsin({ listingId, asin: asin || 'ALI', title, source, aliItemId });
+  document.getElementById('asin-listing-id').value = '';
+  document.getElementById('asin-asin').value = '';
+  document.getElementById('asin-ali-id').value = '';
+  document.getElementById('asin-title').value = '';
+  loadAsinMap();
+  toast(`Mapped ${listingId} → ${asin}`);
+});
+
+// Initial load
+initAccountChecks().then(() => loadOrders());
+refreshAutomationStatus();
+initAutoSync();
+</script>
+</body>
+</html>

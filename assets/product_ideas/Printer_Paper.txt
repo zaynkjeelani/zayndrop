@@ -1,0 +1,100 @@
+1. Inkjet Paper
+2. Laser Paper
+3. Photo Paper
+4. Glossy Paper
+5. Matte Paper
+6. Bright White Paper
+7. Recycled Paper
+8. Heavyweight Paper
+9. Cardstock Paper
+10. Multipurpose Paper
+11. Copy Paper
+12. Presentation Paper
+13. Resume Paper
+14. Stationery Paper
+15. Legal Paper
+16. Letter Paper
+17. A4 Paper
+18. 8.5 x 11 Paper
+19. 11 x 17 Paper
+20. 4 x 6 Paper
+21. 5 x 7 Paper
+22. 8 x 10 Paper
+23. 13 x 19 Paper
+24. 24 lb Paper
+25. 32 lb Paper
+26. 20 lb Paper
+27. 28 lb Paper
+28. 110 lb Paper
+29. 120 gsm Paper
+30. 250 gsm Paper
+31. 300 gsm Paper
+32. 500 Sheets Paper
+33. 1000 Sheets Paper
+34. 2500 Sheets Paper
+35. 5000 Sheets Paper
+36. 10 Reams Paper
+37. 20 Reams Paper
+38. 50 Reams Paper
+39. 100 Reams Paper
+40. Bulk Paper
+41. Wholesale Paper
+42. Value Pack Paper
+43. Economy Paper
+44. Premium Paper
+45. Professional Paper
+46. High-Quality Paper
+47. Archival Paper
+48. Acid-Free Paper
+49. Lignin-Free Paper
+50. Watermarked Paper
+51. FSC Certified Paper
+52. SFI Certified Paper
+53. PEFC Certified Paper
+54. Carbon Neutral Paper
+55. Forest Stewardship Council Paper
+56. Sustainable Paper
+57. Eco-Friendly Paper
+58. Chlorine-Free Paper
+59. Elemental Chlorine-Free Paper
+60. Process Chlorine-Free Paper
+61. Brightness Paper
+62. Opacity Paper
+63. Whiteness Paper
+64. ColorLok Paper
+65. Quick-Dry Paper
+66. Smudge-Proof Paper
+67. Fade-Resistant Paper
+68. Water-Resistant Paper
+69. Tear-Resistant Paper
+70. Heat-Resistant Paper
+71. Cold-Resistant Paper
+72. Acid-Resistant Paper
+73. Alkaline Paper
+74. pH-Neutral Paper
+75. Buffered Paper
+76. Unbuffered Paper
+77. Smooth Paper
+78. Textured Paper
+79. Wove Paper
+80. Laid Paper
+81. Linen Paper
+82. Cotton Paper
+83. Parchment Paper
+84. Vellum Paper
+85. Translucent Paper
+86. Opaque Paper
+87. Semi-Gloss Paper
+88. High-Gloss Paper
+89. Satin Paper
+90. Pearl Paper
+91. Metallic Paper
+92. Foil Paper
+93. Embossed Paper
+94. Debossed Paper
+95. Die-Cut Paper
+96. Perforated Paper
+97. Pre-Punched Paper
+98. Hole-Punched Paper
+99. Reinforced Paper
+100. Index Paper

@@ -1,0 +1,100 @@
+1. Ceiling Fans
+2. Desk Fans
+3. Tower Fans
+4. Pedestal Fans
+5. Box Fans
+6. Bladeless Fans
+7. Outdoor Fans
+8. Industrial Fans
+9. Personal Fans
+10. Handheld Fans
+11. Mini Fans
+12. USB Fans
+13. Table Fans
+14. Floor Fans
+15. Wall Fans
+16. Misting Fans
+17. Portable Fans
+18. Clip-on Fans
+19. Rechargeable Fans
+20. Quiet Fans
+21. Retro Fans
+22. Vintage Fans
+23. Art Deco Fans
+24. Contemporary Fans
+25. Modern Fans
+26. Designer Fans
+27. Energy Efficient Fans
+28. Smart Fans
+29. WiFi Fans
+30. Alexa Compatible Fans
+31. Bluetooth Fans
+32. Oscillating Fans
+33. High Velocity Fans
+34. Low Profile Fans
+35. Dual Blade Fans
+36. Triple Blade Fans
+37. Four Blade Fans
+38. Five Blade Fans
+39. Six Blade Fans
+40. Seven Blade Fans
+41. Eight Blade Fans
+42. Nine Blade Fans
+43. Ten Blade Fans
+44. Twelve Blade Fans
+45. LED Fans
+46. RGB Fans
+47. Gaming Fans
+48. PC Fans
+49. Laptop Fans
+50. Server Fans
+51. CPU Fans
+52. GPU Fans
+53. Case Fans
+54. Cooling Fans
+55. Heatsink Fans
+56. Radiator Fans
+57. Water Cooling Fans
+58. Aquarium Fans
+59. Terrarium Fans
+60. Greenhouse Fans
+61. Hydroponic Fans
+62. Grow Room Fans
+63. Ventilation Fans
+64. Exhaust Fans
+65. Bathroom Fans
+66. Kitchen Fans
+67. Attic Fans
+68. Garage Fans
+69. Workshop Fans
+70. Gym Fans
+71. Yoga Studio Fans
+72. Dance Studio Fans
+73. Theater Fans
+74. Home Theater Fans
+75. Projector Fans
+76. Audio/Visual Fans
+77. Recording Studio Fans
+78. Photography Studio Fans
+79. Art Studio Fans
+80. Craft Room Fans
+81. Sewing Room Fans
+82. Quilting Room Fans
+83. Music Room Fans
+84. Band Room Fans
+85. Orchestra Room Fans
+86. Classroom Fans
+87. Lecture Hall Fans
+88. Library Fans
+89. Museum Fans
+90. Gallery Fans
+91. Retail Fans
+92. Restaurant Fans
+93. Bar Fans
+94. Nightclub Fans
+95. Event Fans
+96. Wedding Fans
+97. Party Fans
+98. Festival Fans
+99. Concert Fans
+100. Sports Fans.

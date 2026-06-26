@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>zayndrop</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0d0f; --bg2: #13151a; --border: #242830;
+      --text: #dde2ec; --text2: #6e7890; --text3: #363d4d;
+      --teal: #00d4aa; --amber: #f0a832; --red: #e84545;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; height: 100vh; display: flex; flex-direction: column; user-select: none; -webkit-app-region: drag; }
+    .content { -webkit-app-region: no-drag; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; gap: 28px; }
+    .logo-row { display: flex; align-items: center; gap: 12px; }
+    .logo-mark { font-size: 32px; color: var(--teal); }
+    .logo-name { font-family: 'DM Mono', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-sub { font-size: 10px; letter-spacing: 0.18em; color: var(--text3); margin-top: 2px; }
+    .cards { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; width: 100%; }
+    .card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+      padding: 20px 16px; cursor: pointer; transition: all 0.15s;
+      display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+    }
+    .card:hover { border-color: var(--card-color); transform: translateY(-2px); background: var(--bg2); }
+    .card:hover .card-icon { color: var(--card-color); }
+    .card-icon { font-size: 28px; color: var(--text3); transition: color 0.15s; }
+    .card-name { font-family: 'DM Mono', sans-serif; font-size: 16px; font-weight: 700; }
+    .card-desc { font-size: 10px; color: var(--text2); line-height: 1.5; }
+    .scout-card { --card-color: var(--amber); }
+    .list-card  { --card-color: #c8f04a; }
+    .fill-card  { --card-color: var(--teal); }
+    .dev-card   { --card-color: var(--red); }
+    .settings-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+    .api-input { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; padding: 8px 12px; outline: none; }
+    .api-input:focus { border-color: var(--teal); }
+    .api-input::placeholder { color: var(--text3); }
+    .save-btn { background: var(--teal); border: none; border-radius: 4px; color: #0c0d0f; cursor: pointer; font-family: 'DM Mono', sans-serif; font-size: 13px; font-weight: 700; padding: 8px 18px; }
+    .save-btn:hover { opacity: 0.88; }
+    .status { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; }
+    .status.ok { color: var(--teal); }
+    .version { font-size: 9px; color: var(--text3); letter-spacing: 0.1em; }
+    .agent-panel { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+    .agent-header { display: flex; align-items: center; justify-content: space-between; }
+    .agent-title { font-size: 10px; letter-spacing: 0.12em; color: var(--text2); }
+    .agent-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+    .agent-status-dot.running { background: var(--teal); animation: pulse 1.2s ease-in-out infinite; }
+    .agent-status-dot.ok { background: var(--teal); }
+    .agent-status-dot.error { background: var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.35;transform:scale(0.7)} }
+    .agent-run-btn { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text2); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 10px; }
+    .agent-run-btn:hover { border-color: var(--teal); color: var(--teal); }
+    .agent-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+    .agent-stat { display: flex; flex-direction: column; gap: 2px; }
+    .agent-stat-val { font-size: 14px; font-weight: 700; }
+    .agent-stat-lbl { font-size: 9px; color: var(--text3); letter-spacing: 0.08em; }
+    .agent-meta { font-size: 9px; color: var(--text3); }
+    .agent-empty { font-size: 10px; color: var(--text3); }
+    .dot-ok  { color: var(--teal); }
+    .dot-err { color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="content">
+  <div class="logo-row">
+    <span class="logo-mark">⬡</span>
+    <div>
+      <div class="logo-name">zayndrop</div>
+      <div class="logo-sub">DROPSHIPPING SUITE v1.0</div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card scout-card" id="open-scout">
+      <div class="card-icon">◈</div>
+      <div class="card-name">Scout</div>
+      <div class="card-desc">Product research, niche radar, AI picks, sniper</div>
+    </div>
+    <div class="card list-card" id="open-list">
+      <div class="card-icon">▲</div>
+      <div class="card-name">List</div>
+      <div class="card-desc">Generate eBay listings, bulk import, post queue</div>
+    </div>
+    <div class="card fill-card" id="open-fill">
+      <div class="card-icon">⬡</div>
+      <div class="card-name">Fill</div>
+      <div class="card-desc">Orders, fulfillment, tracking, buyer messages</div>
+    </div>
+    <div class="card dev-card" id="open-dev">
+      <div class="card-icon">⚙</div>
+      <div class="card-name">Dev</div>
+      <div class="card-desc">Console, diagnostics, automation controls</div>
+    </div>
+  </div>
+
+  <div class="agent-panel" id="agent-panel">
+    <div class="agent-header">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="agent-status-dot" id="agent-dot"></div>
+        <span class="agent-title">⬡ WALTER</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="agent-run-btn" id="agent-run-btn">▶ Run</button>
+        <button class="agent-run-btn" id="agent-open-btn" style="border-color:#6e7890">↗ Open</button>
+      </div>
+    </div>
+    <div id="agent-body"><span class="agent-empty">No runs yet — agent runs daily at 7AM</span></div>
+  </div>
+
+  <div id="update-banner" style="display:none;width:100%;background:#1a2a1a;border:1px solid var(--teal);border-radius:6px;padding:10px 16px;display:none;align-items:center;justify-content:space-between;gap:12px">
+    <span style="font-size:11px;color:var(--teal)">⬡ Update downloaded — restart to apply</span>
+    <button onclick="window.zayn.updaterInstall()" style="background:var(--teal);border:none;border-radius:4px;color:#0c0d0f;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:5px 14px">Restart & Update</button>
+  </div>
+
+  <div class="status" id="status">Enter your Anthropic API key to enable AI features</div>
+  <div class="version" id="app-version">zayndrop v1.0 · Windows</div>
+</div>
+
+<script>
+(async () => {
+  console.log('zayndrop home loaded');
+  console.log('window.zayn:', typeof window.zayn);
+
+  // Load saved key
+  try {
+    const settings = await window.zayn.getSettings();
+    console.log('Settings loaded:', Object.keys(settings));
+    if (settings.anthropicKey) {
+      document.getElementById('api-key').value = settings.anthropicKey;
+      document.getElementById('status').textContent = '✓ API key saved';
+      document.getElementById('status').className = 'status ok';
+    }
+  } catch (e) {
+    console.error('Failed to load settings:', e);
+    document.getElementById('status').textContent = 'Error loading settings: ' + e.message;
+  }
+
+  document.getElementById('open-scout').addEventListener('click', () => {
+    console.log('Opening Scout');
+    window.zayn.openScout().catch(e => console.error(e));
+  });
+  document.getElementById('open-list').addEventListener('click', () => {
+    console.log('Opening List');
+    window.zayn.openList().catch(e => console.error(e));
+  });
+  document.getElementById('open-fill').addEventListener('click', () => {
+    console.log('Opening Fill');
+    window.zayn.openFill().catch(e => console.error(e));
+  });
+  document.getElementById('open-dev').addEventListener('click', () => {
+    console.log('Opening Dev Console');
+    window.zayn.openDev().catch(e => console.error(e));
+  });
+
+  // Agent panel
+  const agentDot = document.getElementById('agent-dot');
+
+  async function loadAgentPanel() {
+    const [log, status] = await Promise.all([
+      window.zayn.agentGetLog().catch(() => []),
+      window.zayn.agentGetStatus().catch(() => null),
+    ]);
+
+    // Update pulsing dot
+    if (status?.running) {
+      agentDot.className = 'agent-status-dot running';
+    } else if (log[0]?.error || status?.error) {
+      agentDot.className = 'agent-status-dot error';
+    } else if (log.length) {
+      agentDot.className = 'agent-status-dot ok';
+    }
+
+    const body = document.getElementById('agent-body');
+    if (!log.length && !status?.running) return;
+
+    if (status?.running) {
+      const lastLine = status.lines?.at(-1)?.msg || 'Starting...';
+      body.innerHTML = `<div class="agent-meta" style="color:var(--teal)">▶ ${lastLine}</div>`;
+      return;
+    }
+
+    const last = log[0];
+    if (!last) return;
+    const profit = last.estimated_profit != null ? `$${parseFloat(last.estimated_profit).toFixed(2)}` : '—';
+    const ranAt  = last.ran_at ? new Date(last.ran_at).toLocaleString([], { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    body.innerHTML = `
+      <div class="agent-stats">
+        <div class="agent-stat"><div class="agent-stat-val">${last.orders_fulfilled ?? 0}</div><div class="agent-stat-lbl">FULFILLED</div></div>
+        <div class="agent-stat"><div class="agent-stat-val" style="color:var(--teal)">${profit}</div><div class="agent-stat-lbl">PROFIT EST.</div></div>
+        <div class="agent-stat"><div class="agent-stat-val">${last.pending_orders ?? 0}</div><div class="agent-stat-lbl">PENDING</div></div>
+        <div class="agent-stat"><div class="agent-stat-val">${last.scout_products ?? 0}</div><div class="agent-stat-lbl">SCOUTED</div></div>
+      </div>
+      <div class="agent-meta">Last run: ${ranAt} · <a href="#" id="open-digest" style="color:var(--text2)">open digest</a>${last.error ? ` · <span style="color:var(--red)">✗ ${last.error}</span>` : ''}</div>
+    `;
+    document.getElementById('open-digest')?.addEventListener('click', e => { e.preventDefault(); window.zayn.openDigest(); });
+  }
+
+  loadAgentPanel();
+  // Poll every 3s so the dot updates while agent runs
+  setInterval(loadAgentPanel, 3000);
+
+  document.getElementById('agent-run-btn').addEventListener('click', async () => {
+    await window.zayn.agentRun({});
+    setTimeout(loadAgentPanel, 800);
+  });
+  document.getElementById('agent-open-btn').addEventListener('click', () => window.zayn.openAgent());
+
+  // Show update banner when update is ready
+  window.zayn.on('update-downloaded', () => {
+    document.getElementById('update-banner').style.display = 'flex';
+  });
+
+  // Show app version
+  try {
+    const { app } = window.require ? window.require('electron').remote || {} : {};
+  } catch (_) {}
+  // version shown via static text; electron-builder injects correct version into packaged app
+
+  document.getElementById('save-key-btn').addEventListener('click', async () => {
+    const key = document.getElementById('api-key').value.trim();
+    const statusEl = document.getElementById('status');
+    console.log('Save clicked, key length:', key.length);
+
+    if (!key) {
+      statusEl.textContent = 'Please enter an API key';
+      statusEl.className = 'status';
+      return;
+    }
+    if (!key.startsWith('sk-ant-')) {
+      statusEl.textContent = 'Invalid key — must start with sk-ant-';
+      statusEl.className = 'status';
+      return;
+    }
+
+    try {
+      statusEl.textContent = 'Saving...';
+      await window.zayn.saveSetting('anthropicKey', key);
+      statusEl.textContent = '✓ API key saved';
+      statusEl.className = 'status ok';
+      console.log('Key saved successfully');
+    } catch (e) {
+      console.error('Save failed:', e);
+      statusEl.textContent = 'Save failed: ' + e.message;
+      statusEl.className = 'status';
+    }
+  });
+})();
+</script>
+</body>
+</html>

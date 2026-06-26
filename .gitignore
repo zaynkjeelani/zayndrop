@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.claude/launch.json
+
+# Puppeteer downloaded browsers
+node_modules/puppeteer/.local-chromium/
+node_modules/puppeteer/.local-browsers/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings (may contain API keys in permission history)
+.claude/
+
+# Secrets (never commit)
+.env
+*.pem

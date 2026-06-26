@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>zayndrop Scout</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b; --bg2: #121214; --bg3: #1a1a1d;
+      --border: #232326; --border2: #323237;
+      --text: #e8e4d8; --text2: #7a7870; --text3: #45433e;
+      --accent: #f0a832; --accent2: #c98a1f;
+      --green: #6fd06f; --red: #e85454; --blue: #5a9bd8;
+      --font: 'DM Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 12px; overflow: hidden; }
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 52px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; -webkit-app-region: drag; }
+    .logo { font-size: 17px; font-weight: 700; color: var(--accent); -webkit-app-region: no-drag; }
+    .logo-sub { font-size: 9px; letter-spacing: 0.14em; color: var(--text3); }
+    .hstats { display: flex; gap: 22px; -webkit-app-region: no-drag; }
+    .hstat { text-align: center; }
+    .hstat-val { font-size: 19px; font-weight: 700; color: var(--accent); }
+    .hstat-label { font-size: 8px; letter-spacing: 0.1em; color: var(--text3); }
+
+    .toolbar { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: 3px; }
+    .field label { font-size: 8px; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; }
+    .tin { background: var(--bg3); border: 1px solid var(--border2); border-radius: 3px; color: var(--text); font-family: var(--font); font-size: 11px; padding: 7px 10px; outline: none; }
+    .tin:focus { border-color: var(--accent); }
+    .tin::placeholder { color: var(--text3); }
+    #kw { width: 320px; }
+    .tin.small { width: 64px; }
+    .check { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text2); cursor: pointer; padding-bottom: 8px; }
+    .check input { accent-color: var(--accent); }
+    .btn { background: var(--accent); border: none; border-radius: 3px; color: #0a0a0b; cursor: pointer; font-family: var(--font); font-size: 12px; font-weight: 700; padding: 8px 18px; }
+    .btn:hover:not(:disabled) { background: var(--accent2); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn.ghost { background: none; border: 1px solid var(--border2); color: var(--text2); font-weight: 400; }
+    .btn.ghost:hover { color: var(--text); border-color: var(--text2); }
+
+    .main { display: flex; flex: 1; overflow: hidden; }
+    .results-wrap { flex: 1; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: var(--bg2); border-bottom: 1px solid var(--border); color: var(--text3); font-size: 9px; letter-spacing: 0.1em; padding: 8px 10px; text-align: left; text-transform: uppercase; position: sticky; top: 0; cursor: pointer; user-select: none; }
+    th:hover { color: var(--text2); }
+    td { border-bottom: 1px solid var(--border); padding: 7px 10px; font-size: 11px; vertical-align: middle; }
+    tr:hover td { background: var(--bg2); }
+    .pimg { width: 38px; height: 38px; object-fit: contain; background: #fff; border-radius: 3px; }
+    .ptitle { max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .ptitle a { color: var(--text); text-decoration: none; }
+    .ptitle a:hover { color: var(--accent); }
+    .score { font-weight: 700; padding: 2px 8px; border-radius: 3px; }
+    .score.hi { color: var(--green); }
+    .score.mid { color: var(--accent); }
+    .score.lo { color: var(--text3); }
+    .verdict { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 2px; }
+    .verdict.STRONGBUY { background: rgba(111,208,111,0.15); color: var(--green); }
+    .verdict.BUY { background: rgba(240,168,50,0.15); color: var(--accent); }
+    .verdict.WATCH { background: rgba(90,155,216,0.15); color: var(--blue); }
+    .verdict.SKIP { background: rgba(122,120,112,0.12); color: var(--text3); }
+    .rbtn { background: none; border: 1px solid var(--border2); border-radius: 3px; color: var(--text2); cursor: pointer; font-family: var(--font); font-size: 9px; padding: 3px 8px; }
+    .rbtn:hover { color: var(--accent); border-color: var(--accent); }
+    .empty { color: var(--text3); padding: 60px; text-align: center; font-size: 11px; }
+
+    .log-panel { width: 300px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .log-head { padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg2); font-size: 9px; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; }
+    .log { flex: 1; overflow-y: auto; padding: 8px 12px; font-size: 10px; color: var(--text2); line-height: 1.7; }
+    .log .ok { color: var(--green); }
+    .log .warn { color: var(--accent); }
+    ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: var(--border2); }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text3); cursor: pointer; font-family: var(--font); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 10px 16px; }
+    .tab-btn:hover { color: var(--text2); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .seller-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 14px; padding: 4px 6px 4px 12px; font-size: 11px; }
+    .seller-chip button { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 11px; }
+    .seller-chip button:hover { color: var(--red); }
+    .seller-chip .pull { color: var(--accent); }
+    .toast-container { position: fixed; bottom: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 6px; }
+    .toast { background: var(--accent); color: #0a0a0b; font-size: 11px; padding: 9px 16px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="logo">◈ zayndrop Scout</div>
+      <div class="logo-sub">PRODUCT HUNTER</div>
+    </div>
+    <div class="hstats">
+      <div class="hstat"><div class="hstat-val" id="h-results">0</div><div class="hstat-label">RESULTS</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-vero">0</div><div class="hstat-label">VERO BLOCKED</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-saved">0</div><div class="hstat-label">SAVED</div></div>
+    </div>
+    <div style="-webkit-app-region:no-drag;display:flex;gap:8px">
+      <button class="btn ghost" id="ai-picks-btn" disabled>✦ AI PICKS</button>
+      <button class="btn ghost" id="send-all-btn" disabled>→ LIST (top 10)</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px">
+    <button class="tab-btn active" data-tab="hunt">⌕ HUNT</button>
+    <button class="tab-btn" data-tab="comp">👁 COMPETITORS</button>
+  </div>
+
+  <div id="view-hunt" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="toolbar">
+    <div class="field"><label>Keywords (comma-separated)</label>
+      <input class="tin" id="kw" placeholder="e.g. usb c charger 65w, roku remote replacement" /></div>
+    <div class="field"><label>Pages</label><input class="tin small" id="pages" type="number" value="2" min="1" max="5" /></div>
+    <div class="field"><label>Min $</label><input class="tin small" id="minp" type="number" value="8" /></div>
+    <div class="field"><label>Max $</label><input class="tin small" id="maxp" type="number" value="60" /></div>
+    <div class="field"><label>Min Rev</label><input class="tin small" id="minr" type="number" value="50" /></div>
+    <label class="check"><input type="checkbox" id="check-ebay" /> eBay competition check (slower)</label>
+    <button class="btn" id="hunt-btn">▶ HUNT</button>
+  </div>
+
+  <div class="toolbar" style="border-top:none;background:var(--bg2)">
+    <div class="field" style="flex:1"><label>📡 Radar — competitor eBay sellers (comma-separated usernames)</label>
+      <input class="tin" id="radar-sellers" style="width:100%" placeholder="e.g. dropship_dave, ecom-emily" /></div>
+    <div class="field"><label>Movers &amp; Shakers categories</label>
+      <input class="tin" id="radar-cats" style="width:240px" placeholder="electronics, kitchen (blank = all)" /></div>
+    <button class="btn" id="radar-btn" style="background:var(--blue);color:#fff">📡 RUN RADAR</button>
+  </div>
+
+  <div class="toolbar" style="border-top:none;background:var(--bg2)">
+    <div class="field" style="flex:1"><label>🔑 Keyword Hunter — probe demand on BOTH markets per keyword</label>
+      <input class="tin" id="kh-keywords" style="width:100%" placeholder="e.g. air fryer liners, cable organizer box — or hit 🎲 for random niches" /></div>
+    <button class="btn ghost" id="kh-dice-btn" title="Random keywords from 96 niche files">🎲</button>
+    <button class="btn" id="kh-btn" style="background:var(--green);color:#0a0a0b">🔑 KEYWORD HUNT</button>
+  </div>
+
+  <div class="main">
+    <div class="results-wrap">
+      <table>
+        <thead><tr>
+          <th></th><th data-sort="title">Title</th><th data-sort="price">Amazon $</th>
+          <th data-sort="reviews">Reviews</th><th data-sort="sold30d">Sold 30d</th><th data-sort="ebayLowest">eBay $</th>
+          <th data-sort="margin">Margin</th><th data-sort="score">Score</th><th>AI</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="results-tbody"><tr><td colspan="10" class="empty">Enter keywords and hit HUNT — or add competitor sellers and RUN RADAR</td></tr></tbody>
+      </table>
+    </div>
+    <div class="log-panel">
+      <div class="log-head">Hunt Log</div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+  </div><!-- /view-hunt -->
+
+  <!-- Competitors tab -->
+  <div id="view-comp" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div class="toolbar">
+      <div class="field"><label>Add competitor (eBay username)</label>
+        <input class="tin" id="comp-add-input" style="width:220px" placeholder="username" /></div>
+      <button class="btn ghost" id="comp-add-btn" style="margin-bottom:0">+ ADD</button>
+      <div class="field"><label>Sold within (days)</label><input class="tin small" id="comp-days" type="number" value="14" min="1" max="90" /></div>
+      <div class="field"><label>Min sold</label><input class="tin small" id="comp-minsold" type="number" value="1" min="1" /></div>
+      <button class="btn" id="comp-pull-all-btn">⬇ PULL ALL</button>
+      <button class="btn" id="comp-browse-btn" style="background:var(--blue);color:#fff">🌐 BROWSE WITH OVERLAY</button>
+      <button class="btn" id="comp-to-list-btn" style="background:#c8f04a">▲ → LIST SELECTED</button>
+    </div>
+    <div class="toolbar" style="border-top:none;background:var(--bg2);min-height:46px" id="comp-sellers-row">
+      <span style="font-size:10px;color:var(--text3)">No competitors yet — add a username or pull from the overlay</span>
+    </div>
+    <div class="main">
+      <div class="results-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:28px"><input type="checkbox" id="comp-check-all" /></th>
+            <th data-csort="seller">Seller</th><th data-csort="title">Product</th>
+            <th data-csort="ebayPrice">eBay $</th><th data-csort="soldWindow">Sold (window)</th>
+            <th data-csort="soldTotal">Sold total</th><th data-csort="lastSold">Last sold</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="comp-tbody"><tr><td colspan="7" class="empty">Pull a competitor to see their products</td></tr></tbody>
+        </table>
+      </div>
+      <div class="log-panel">
+        <div class="log-head">Competitor Log</div>
+        <div class="log" id="comp-log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+let products = [];
+let picks = {};
+let sortKey = 'score', sortDesc = true;
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+function logLine(text, cls = '') {
+  const log = document.getElementById('log');
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function render() {
+  const tbody = document.getElementById('results-tbody');
+  document.getElementById('h-results').textContent = products.length;
+  if (!products.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">No results</td></tr>';
+    return;
+  }
+  const sorted = [...products].sort((a, b) => {
+    const av = a[sortKey] ?? -1, bv = b[sortKey] ?? -1;
+    return sortDesc ? (bv > av ? 1 : -1) : (av > bv ? 1 : -1);
+  });
+  tbody.innerHTML = sorted.map((p, i) => {
+    const sc = p.score >= 70 ? 'hi' : p.score >= 45 ? 'mid' : 'lo';
+    const pick = picks[p.asin] || picks[p.title.toLowerCase().slice(0, 25)] || null;
+    const titleHtml = p.asin
+      ? `<a href="https://www.amazon.com/dp/${p.asin}" target="_blank" title="${p.title.replace(/"/g, '&quot;')}">${p.title.slice(0, 70)}</a>`
+      : `<span title="${p.title.replace(/"/g, '&quot;')}">${p.title.slice(0, 70)}</span>`;
+    const sub = [p.asin, p.prime ? 'prime' : '', p.source || ''].filter(Boolean).join(' · ');
+    const margin = p.margin !== undefined ? p.margin
+      : (p.ebayLowest && p.price ? +(p.ebayLowest - p.price).toFixed(2) : null);
+    return `<tr>
+      <td>${p.image ? `<img class="pimg" src="${p.image}" />` : ''}</td>
+      <td><span class="ptitle">${titleHtml}</span>
+        <span style="font-size:9px;color:var(--text3)">${sub}</span></td>
+      <td>${p.price ? '$' + p.price.toFixed(2) : '—'}</td>
+      <td>${p.reviews ? p.reviews.toLocaleString() : '—'}</td>
+      <td>${p.sold30d !== undefined ? `<b style="color:var(--accent)">${p.sold30d}</b>${p.sold7d ? ` <span style="font-size:9px;color:var(--text3)">(${p.sold7d}/wk)</span>` : ''}` : '—'}</td>
+      <td>${p.ebayLowest ? '$' + p.ebayLowest.toFixed(2) : '—'}</td>
+      <td>${margin !== null && margin !== undefined ? `<span style="color:${margin > 0 ? 'var(--green)' : 'var(--red)'}">${margin > 0 ? '+' : ''}$${margin}</span>` : '—'}</td>
+      <td><span class="score ${sc}">${p.score}</span></td>
+      <td>${pick ? `<span class="verdict ${pick.verdict.replace(/\s+/g, '')}" title="${(pick.reason || '').replace(/"/g, '&quot;')}">${pick.verdict}</span>` : '—'}</td>
+      <td>${p.asin ? `<button class="rbtn" data-save="${p.asin}">SAVE</button> <button class="rbtn" data-list="${p.asin}">→LIST</button>` : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('[data-save]').forEach(b => b.addEventListener('click', async () => {
+    const p = products.find(x => x.asin === b.dataset.save);
+    await window.zayn.scoutSaveProduct({ asin: p.asin, title: p.title, price: p.price, soldCount: p.reviews, score: { total: p.score }, source: 'hunt', url: `https://www.amazon.com/dp/${p.asin}` });
+    document.getElementById('h-saved').textContent = +document.getElementById('h-saved').textContent + 1;
+    toast('Saved ' + p.asin);
+  }));
+  tbody.querySelectorAll('[data-list]').forEach(b => b.addEventListener('click', async () => {
+    const p = products.find(x => x.asin === b.dataset.list);
+    await window.zayn.scoutSendToList([{ asin: p.asin, title: p.title, price: p.price }]);
+    toast(p.asin + ' → List queue');
+  }));
+}
+
+document.querySelectorAll('th[data-sort]').forEach(th => th.addEventListener('click', () => {
+  const k = th.dataset.sort;
+  if (sortKey === k) sortDesc = !sortDesc; else { sortKey = k; sortDesc = true; }
+  render();
+}));
+
+document.getElementById('hunt-btn').addEventListener('click', async () => {
+  const kw = document.getElementById('kw').value.trim();
+  if (!kw) { toast('Enter keywords first'); return; }
+  const btn = document.getElementById('hunt-btn');
+  btn.disabled = true; btn.textContent = '⟳ HUNTING...';
+  document.getElementById('log').innerHTML = '';
+  picks = {};
+
+  window.zayn.off('hunt-progress');
+  window.zayn.on('hunt-progress', (p) => logLine(p.text, p.stage === 'done' ? 'ok' : ''));
+
+  try {
+    const res = await window.zayn.scoutHunt({
+      keywords: kw,
+      options: {
+        pages: +document.getElementById('pages').value || 2,
+        minPrice: +document.getElementById('minp').value || 0,
+        maxPrice: +document.getElementById('maxp').value || 999,
+        minReviews: +document.getElementById('minr').value || 0,
+        checkEbay: document.getElementById('check-ebay').checked,
+      }
+    });
+    if (res.success) {
+      products = res.products;
+      document.getElementById('h-vero').textContent = res.veroRemoved;
+      document.getElementById('ai-picks-btn').disabled = !products.length;
+      document.getElementById('send-all-btn').disabled = !products.length;
+      render();
+      saveResults();
+    } else {
+      logLine('✕ ' + (res.error || 'Hunt failed'), 'warn');
+    }
+  } catch (e) { logLine('✕ ' + e.message, 'warn'); }
+  btn.disabled = false; btn.textContent = '▶ HUNT';
+});
+
+document.getElementById('ai-picks-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('ai-picks-btn');
+  btn.disabled = true; btn.textContent = '⟳ ANALYZING...';
+  logLine('Sending top 30 to Claude...');
+  try {
+    const res = await window.zayn.scoutAnalyze({ products });
+    if (res.success) {
+      for (const p of res.picks) picks[p.asin || (p.title || '').toLowerCase().slice(0, 25)] = p;
+      logLine(`✓ AI verdicts for ${res.picks.length} products`, 'ok');
+      render();
+      saveResults();
+    } else { logLine('✕ ' + res.error, 'warn'); toast('AI Picks failed: ' + res.error); }
+  } catch (e) { logLine('✕ ' + e.message, 'warn'); toast('AI Picks error: ' + e.message); }
+  btn.disabled = false; btn.textContent = '✦ AI PICKS';
+});
+
+// ── Persistence ───────────────────────────────────────────────
+async function saveResults() {
+  try { await window.zayn.scoutSaveResults({ products, picks, vero: document.getElementById('h-vero').textContent }); } catch (_) {}
+}
+(async () => {
+  try {
+    const saved = await window.zayn.scoutLoadResults();
+    if (saved?.products?.length) {
+      products = saved.products;
+      picks = saved.picks || {};
+      document.getElementById('h-vero').textContent = saved.vero || 0;
+      document.getElementById('ai-picks-btn').disabled = false;
+      document.getElementById('send-all-btn').disabled = false;
+      render();
+      logLine(`Restored ${products.length} results from ${(saved.saved_at || '').slice(0, 16).replace('T', ' ')}`, 'ok');
+    }
+  } catch (_) {}
+})();
+
+// ── Keyword Hunter ────────────────────────────────────────────
+document.getElementById('kh-dice-btn').addEventListener('click', async () => {
+  const kws = await window.zayn.radarRandomNiches(6);
+  document.getElementById('kh-keywords').value = kws.join(', ');
+});
+
+document.getElementById('kh-btn').addEventListener('click', async () => {
+  const keywords = document.getElementById('kh-keywords').value.split(',').map(s => s.trim()).filter(Boolean);
+  if (!keywords.length) { toast('Enter keywords or hit 🎲'); return; }
+  const btn = document.getElementById('kh-btn');
+  btn.disabled = true; btn.textContent = '⟳ PROBING...';
+  document.getElementById('log').innerHTML = '';
+  picks = {};
+  window.zayn.off('hunt-progress');
+  window.zayn.on('hunt-progress', (p) => logLine(p.text));
+  try {
+    const res = await window.zayn.radarKeywords({ keywords });
+    if (res.success) {
+      products = res.candidates.map(c => ({
+        asin: c.asin || '', title: c.title, price: c.amazonPrice || 0,
+        reviews: c.reviews || 0, image: c.image || '', prime: c.prime || false,
+        ebayLowest: c.ebayPrice || 0, sold30d: c.sold30d, sold7d: c.sold7d,
+        margin: c.margin, score: c.score, source: c.source,
+      }));
+      document.getElementById('ai-picks-btn').disabled = !products.length;
+      document.getElementById('send-all-btn').disabled = !products.length;
+      render();
+      saveResults();
+      logLine('✓ Keyword hunt done', 'ok');
+    } else logLine('✕ ' + (res.error || 'failed'), 'warn');
+  } catch (e) { logLine('✕ ' + e.message, 'warn'); }
+  btn.disabled = false; btn.textContent = '🔑 KEYWORD HUNT';
+});
+
+// ── Market Radar ──────────────────────────────────────────────
+(async () => {
+  const saved = await window.zayn.radarGetSellers();
+  if (saved?.length) document.getElementById('radar-sellers').value = saved.join(', ');
+})();
+
+document.getElementById('radar-btn').addEventListener('click', async () => {
+  const sellers = document.getElementById('radar-sellers').value.split(',').map(s => s.trim()).filter(Boolean);
+  const categories = document.getElementById('radar-cats').value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  if (!sellers.length && !categories.length) {
+    // still useful: movers & shakers front page
+  }
+  await window.zayn.radarSaveSellers(sellers);
+
+  const btn = document.getElementById('radar-btn');
+  btn.disabled = true; btn.textContent = '⟳ SCANNING...';
+  document.getElementById('log').innerHTML = '';
+  picks = {};
+
+  window.zayn.off('hunt-progress');
+  window.zayn.on('hunt-progress', (p) => logLine(p.text));
+
+  try {
+    const res = await window.zayn.radarRun({ sellers, categories });
+    if (res.success) {
+      // Normalize radar candidates into the shared products shape
+      products = res.candidates.map(c => ({
+        asin: c.asin || '',
+        title: c.title,
+        price: c.amazonPrice || 0,
+        reviews: c.reviews || 0,
+        image: c.image || '',
+        prime: c.prime || false,
+        ebayLowest: c.ebayPrice || c.medianPrice || 0,
+        sold30d: c.sold30d ?? (c.soldTotal !== undefined ? c.soldTotal : undefined),
+        sold7d: c.sold7d,
+        margin: c.margin,
+        score: c.score,
+        source: c.source,
+      }));
+      document.getElementById('h-vero').textContent = res.veroRemoved;
+      document.getElementById('ai-picks-btn').disabled = !products.length;
+      document.getElementById('send-all-btn').disabled = !products.length;
+      render();
+      saveResults();
+      logLine('✓ Radar done', 'ok');
+    } else logLine('✕ ' + (res.error || 'Radar failed'), 'warn');
+  } catch (e) { logLine('✕ ' + e.message, 'warn'); }
+  btn.disabled = false; btn.textContent = '📡 RUN RADAR';
+});
+
+document.getElementById('send-all-btn').addEventListener('click', async () => {
+  const top = [...products].sort((a, b) => b.score - a.score).slice(0, 10);
+  await window.zayn.scoutSendToList(top.map(p => ({ asin: p.asin, title: p.title, price: p.price })));
+  toast(`${top.length} products → List queue`);
+});
+
+// ── Tabs ──────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-hunt').style.display = btn.dataset.tab === 'hunt' ? 'flex' : 'none';
+  document.getElementById('view-comp').style.display = btn.dataset.tab === 'comp' ? 'flex' : 'none';
+  if (btn.dataset.tab === 'comp') loadCompProducts();
+}));
+
+// ── Competitors tab ───────────────────────────────────────────
+let compProducts = [];
+let csortKey = 'soldWindow', csortDesc = true;
+
+function compLog(text, cls = '') {
+  const log = document.getElementById('comp-log');
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+const compParams = () => ({
+  days: +document.getElementById('comp-days').value || 14,
+  minSold: +document.getElementById('comp-minsold').value || 1,
+});
+
+async function getSellers() { return await window.zayn.radarGetSellers(); }
+async function setSellers(s) { await window.zayn.radarSaveSellers([...new Set(s)]); renderSellers(); }
+
+async function renderSellers() {
+  const sellers = await getSellers();
+  const row = document.getElementById('comp-sellers-row');
+  if (!sellers.length) {
+    row.innerHTML = '<span style="font-size:10px;color:var(--text3)">No competitors yet — add a username or pull from the overlay</span>';
+    return;
+  }
+  row.innerHTML = sellers.map(s =>
+    `<span class="seller-chip">${s}
+      <button class="pull" data-pull-one="${s}" title="Pull this seller's products">⬇</button>
+      <button data-del-seller="${s}" title="Remove seller + products">✕</button>
+    </span>`).join('');
+  row.querySelectorAll('[data-pull-one]').forEach(b => b.addEventListener('click', () => pullSeller(b.dataset.pullOne)));
+  row.querySelectorAll('[data-del-seller]').forEach(b => b.addEventListener('click', async () => {
+    await window.zayn.compDeleteSeller(b.dataset.delSeller);
+    await setSellers((await getSellers()).filter(s => s !== b.dataset.delSeller));
+    loadCompProducts();
+  }));
+}
+
+let compChecked = new Set();
+const compKey = (p) => p.seller + '|' + (p.title || '').slice(0, 60);
+
+function renderCompProducts() {
+  const tbody = document.getElementById('comp-tbody');
+  if (!compProducts.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Pull a competitor to see their products</td></tr>';
+    return;
+  }
+  const sorted = [...compProducts].sort((a, b) => {
+    const av = a[csortKey] ?? -1, bv = b[csortKey] ?? -1;
+    return csortDesc ? (bv > av ? 1 : -1) : (av > bv ? 1 : -1);
+  });
+  tbody.innerHTML = sorted.map(p => `
+    <tr>
+      <td><input type="checkbox" data-ccheck="${encodeURIComponent(compKey(p))}" ${compChecked.has(compKey(p)) ? 'checked' : ''} /></td>
+      <td style="color:var(--text2);font-size:10px">${p.seller}</td>
+      <td><span class="ptitle" title="${(p.title || '').replace(/"/g, '&quot;')}">${(p.title || '').slice(0, 65)}</span></td>
+      <td>$${(p.ebayPrice || 0).toFixed(2)}</td>
+      <td><b style="color:var(--accent)">${p.soldWindow ?? 0}</b></td>
+      <td>${p.soldTotal ?? 0}</td>
+      <td style="font-size:10px;color:var(--text2)">${p.lastSold || '—'}</td>
+      <td>
+        <button class="rbtn" data-amz="${encodeURIComponent(p.title)}">FIND AMZ</button>
+        ${p.itemId ? `<button class="rbtn" data-view="${p.itemId}">VIEW</button>` : ''}
+      </td>
+    </tr>`).join('');
+  tbody.querySelectorAll('[data-ccheck]').forEach(cb => cb.addEventListener('change', () => {
+    const k = decodeURIComponent(cb.dataset.ccheck);
+    cb.checked ? compChecked.add(k) : compChecked.delete(k);
+  }));
+  tbody.querySelectorAll('[data-amz]').forEach(b => b.addEventListener('click', () => {
+    const q = decodeURIComponent(b.dataset.amz).split(/\s+/).slice(0, 8).join(' ');
+    window.open('https://www.amazon.com/s?k=' + encodeURIComponent(q), '_blank');
+  }));
+  tbody.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+    window.open('https://www.ebay.com/itm/' + b.dataset.view, '_blank');
+  }));
+}
+
+document.querySelectorAll('th[data-csort]').forEach(th => th.addEventListener('click', () => {
+  const k = th.dataset.csort;
+  if (csortKey === k) csortDesc = !csortDesc; else { csortKey = k; csortDesc = true; }
+  renderCompProducts();
+}));
+
+async function loadCompProducts() {
+  compProducts = await window.zayn.compGetProducts();
+  renderCompProducts();
+  renderSellers();
+}
+
+async function pullSeller(seller) {
+  compLog(`⟳ pulling ${seller}...`);
+  try {
+    const res = await window.zayn.compPull({ seller, options: compParams() });
+    if (res.success) {
+      compLog(`✓ ${seller}: ${res.products.length} products (${res.veroRemoved} VeRO removed)`, 'ok');
+      await loadCompProducts();
+    } else if (res.captcha) {
+      compLog(`⚠ ${seller}: ${res.error || 'CAPTCHA — solve in browser tab, then pull again'}`, 'warn');
+    } else compLog(`✕ ${seller}: ${res.error || 'failed'}`, 'warn');
+  } catch (e) { compLog(`✕ ${seller}: ${e.message}`, 'warn'); }
+}
+
+document.getElementById('comp-add-btn').addEventListener('click', async () => {
+  const u = document.getElementById('comp-add-input').value.trim();
+  if (!u) return;
+  await setSellers([...(await getSellers()), u]);
+  document.getElementById('comp-add-input').value = '';
+  toast('Added ' + u);
+});
+document.getElementById('comp-add-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('comp-add-btn').click();
+});
+
+document.getElementById('comp-pull-all-btn').addEventListener('click', async () => {
+  const sellers = await getSellers();
+  if (!sellers.length) { toast('Add competitors first'); return; }
+  const btn = document.getElementById('comp-pull-all-btn');
+  btn.disabled = true; btn.textContent = '⟳ PULLING...';
+  for (const s of sellers) await pullSeller(s);
+  btn.disabled = false; btn.textContent = '⬇ PULL ALL';
+});
+
+document.getElementById('comp-browse-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('comp-browse-btn');
+  btn.disabled = true; btn.textContent = '⟳ Opening...';
+  await window.zayn.compOverlayStart(compParams());
+  btn.disabled = false; btn.textContent = '🌐 OVERLAY ACTIVE';
+  compLog('✓ Overlay browser open — browse eBay, the panel follows you. Pulled sellers land here automatically.', 'ok');
+});
+
+['comp-days', 'comp-minsold'].forEach(id =>
+  document.getElementById(id).addEventListener('change', () => window.zayn.compSetParams(compParams())));
+
+document.getElementById('comp-check-all').addEventListener('change', (e) => {
+  compChecked = e.target.checked ? new Set(compProducts.map(compKey)) : new Set();
+  renderCompProducts();
+});
+
+document.getElementById('comp-to-list-btn').addEventListener('click', async () => {
+  const selected = compProducts.filter(p => compChecked.has(compKey(p)));
+  if (!selected.length) { toast('Check products to send'); return; }
+  const r = await window.zayn.listAddItems(selected.map(p => ({
+    title: p.title, competitor_price: p.ebayPrice, seller: p.seller,
+    competitor_item_id: p.itemId || '', sold_window: p.soldWindow || 0,
+    status: 'pending'
+  })));
+  compChecked.clear();
+  renderCompProducts();
+  const bankedMsg = r && r.banked ? ` (${r.banked} already listed — skipped)` : '';
+  toast(`${r ? r.added : selected.length} products → List queue${bankedMsg}`);
+});
+
+window.zayn.on('comp-updated', async ({ seller }) => {
+  compLog(`✓ overlay pull: ${seller}`, 'ok');
+  const sellers = await getSellers();
+  if (!sellers.includes(seller)) await setSellers([...sellers, seller]);
+  await loadCompProducts();
+});
+</script>
+</body>
+</html>

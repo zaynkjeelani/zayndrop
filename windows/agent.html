@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ZaynDrop Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0d0f; --bg2: #13151a; --bg3: #1a1d24;
+      --border: #242830; --text: #dde2ec; --text2: #6e7890; --text3: #363d4d;
+      --teal: #00d4aa; --amber: #f0a832; --red: #e84545; --lime: #c8f04a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; -webkit-app-region: drag; }
+
+    .header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; -webkit-app-region: drag; }
+    .header-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+    .logo { color: var(--lime); font-size: 18px; }
+    .title { font-size: 13px; font-weight: 700; letter-spacing: 0.05em; }
+    .subtitle { font-size: 10px; color: var(--text3); letter-spacing: 0.1em; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
+
+    /* Status pill */
+    .status-pill { display: flex; align-items: center; gap: 6px; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 10px; letter-spacing: 0.08em; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+    .status-dot.running { background: var(--teal); animation: pulse 1.2s ease-in-out infinite; }
+    .status-dot.ok      { background: var(--teal); }
+    .status-dot.error   { background: var(--red); }
+    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.75); } }
+
+    .btn { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text2); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 10px; padding: 5px 12px; white-space: nowrap; transition: all 0.12s; }
+    .btn:hover:not(:disabled) { border-color: var(--lime); color: var(--lime); }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn-run { border-color: var(--teal); color: var(--teal); }
+    .btn-run:hover:not(:disabled) { background: var(--teal); color: var(--bg); }
+    .btn-hunt { border-color: var(--amber); color: var(--amber); }
+    .btn-hunt:hover:not(:disabled) { background: var(--amber); color: var(--bg); }
+
+    /* Stats bar */
+    .stats-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .stat { flex: 1; padding: 10px 16px; border-right: 1px solid var(--border); }
+    .stat:last-child { border-right: none; }
+    .stat-val { font-size: 18px; font-weight: 700; }
+    .stat-lbl { font-size: 9px; color: var(--text3); letter-spacing: 0.1em; margin-top: 2px; }
+    .stat-val.profit { color: var(--teal); }
+    .stat-val.warn   { color: var(--amber); }
+
+    /* Log terminal */
+    .log-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .log-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .log-label { font-size: 9px; color: var(--text3); letter-spacing: 0.12em; }
+    .log-clear { background: none; border: none; color: var(--text3); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 9px; padding: 0; }
+    .log-clear:hover { color: var(--text2); }
+    .log { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 3px; }
+    .log-line { font-size: 11px; line-height: 1.5; color: var(--text2); display: flex; gap: 10px; }
+    .log-time { color: var(--text3); flex-shrink: 0; font-size: 10px; }
+    .log-msg { flex: 1; word-break: break-word; }
+    .log-msg.ok    { color: var(--teal); }
+    .log-msg.error { color: var(--red); }
+    .log-msg.warn  { color: var(--amber); }
+    .log-empty { color: var(--text3); font-size: 11px; margin: auto; text-align: center; line-height: 2; }
+
+    /* Footer */
+    .footer { border-top: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .footer-meta { font-size: 9px; color: var(--text3); }
+    .footer-link { background: none; border: none; color: var(--text3); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 9px; text-decoration: underline; }
+    .footer-link:hover { color: var(--text2); }
+
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="logo">⬡</span>
+    <div>
+      <div class="title">WALTER</div>
+      <div class="subtitle">business intelligence · runs daily 7AM</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">IDLE</span>
+    </div>
+    <button class="btn btn-run" id="btn-run">▶ Run</button>
+    <button class="btn btn-hunt" id="btn-hunt">⬡ Hunt</button>
+    <button class="btn" id="btn-digest">↗ Digest</button>
+  </div>
+</div>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat"><div class="stat-val" id="s-fulfilled">—</div><div class="stat-lbl">FULFILLED YESTERDAY</div></div>
+  <div class="stat"><div class="stat-val profit" id="s-profit">—</div><div class="stat-lbl">PROFIT EST.</div></div>
+  <div class="stat"><div class="stat-val warn" id="s-pending">—</div><div class="stat-lbl">PENDING ORDERS</div></div>
+  <div class="stat"><div class="stat-val" id="s-scout">—</div><div class="stat-lbl">PRODUCTS SCOUTED</div></div>
+</div>
+
+<div class="log-wrap">
+  <div class="log-header">
+    <span class="log-label">LIVE LOG</span>
+    <button class="log-clear" id="btn-clear">clear</button>
+  </div>
+  <div class="log" id="log">
+    <div class="log-empty" id="log-empty">No agent runs yet.<br>Click ▶ Run to start, or wait for the 7AM schedule.</div>
+  </div>
+</div>
+
+<div class="footer">
+  <span class="footer-meta" id="footer-meta">—</span>
+  <button class="footer-link" id="btn-open-log">view run history</button>
+</div>
+
+<script>
+(async () => {
+  let polling = null;
+  let lastLineCount = 0;
+  let isRunning = false;
+
+  const dot      = document.getElementById('status-dot');
+  const statusTx = document.getElementById('status-text');
+  const btnRun   = document.getElementById('btn-run');
+  const btnHunt  = document.getElementById('btn-hunt');
+  const btnDig   = document.getElementById('btn-digest');
+  const logEl    = document.getElementById('log');
+  const logEmpty = document.getElementById('log-empty');
+  const footer   = document.getElementById('footer-meta');
+
+  function fmtTime(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function msgClass(msg) {
+    if (/^✓/.test(msg)) return 'ok';
+    if (/^✗|error|failed/i.test(msg)) return 'error';
+    if (/^⚠|warn/i.test(msg)) return 'warn';
+    return '';
+  }
+
+  function appendLines(lines, clear = false) {
+    if (clear) { logEl.innerHTML = ''; lastLineCount = 0; }
+    if (!lines.length) return;
+    logEmpty.style.display = 'none';
+    lines.forEach(({ t, msg }) => {
+      const row = document.createElement('div');
+      row.className = 'log-line';
+      row.innerHTML = `<span class="log-time">${fmtTime(t)}</span><span class="log-msg ${msgClass(msg)}">${msg}</span>`;
+      logEl.appendChild(row);
+    });
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setRunning(running) {
+    isRunning = running;
+    if (running) {
+      dot.className = 'status-dot running';
+      statusTx.textContent = 'RUNNING';
+    }
+    btnRun.disabled  = running;
+    btnHunt.disabled = running;
+  }
+
+  function setDone(error) {
+    if (error) {
+      dot.className = 'status-dot error';
+      statusTx.textContent = 'ERROR';
+    } else {
+      dot.className = 'status-dot ok';
+      statusTx.textContent = 'DONE';
+    }
+    btnRun.disabled  = false;
+    btnHunt.disabled = false;
+  }
+
+  async function loadStatus() {
+    const s = await window.zayn.agentGetStatus().catch(() => null);
+    if (!s) return;
+
+    // Append any new lines since last poll
+    const newLines = (s.lines || []).slice(lastLineCount);
+    if (lastLineCount === 0 && s.lines?.length) appendLines(s.lines, true);
+    else if (newLines.length) appendLines(newLines);
+    lastLineCount = (s.lines || []).length;
+
+    if (s.running) {
+      setRunning(true);
+    } else if (lastLineCount > 0) {
+      setDone(s.error);
+      if (polling) { clearInterval(polling); polling = null; }
+      await loadHistory(); // refresh stats after run
+    }
+  }
+
+  async function loadHistory() {
+    const log = await window.zayn.agentGetLog().catch(() => []);
+    if (!log.length) return;
+    const last = log[0];
+    document.getElementById('s-fulfilled').textContent = last.orders_fulfilled ?? '—';
+    document.getElementById('s-profit').textContent    = last.estimated_profit != null ? `$${parseFloat(last.estimated_profit).toFixed(2)}` : '—';
+    document.getElementById('s-pending').textContent   = last.pending_orders ?? '—';
+    document.getElementById('s-scout').textContent     = last.scout_products ?? '—';
+    const ranAt = last.ran_at ? new Date(last.ran_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    footer.textContent = `Last run: ${ranAt} · mode: ${last.mode || '—'}`;
+  }
+
+  async function startRun(hunt = false) {
+    lastLineCount = 0;
+    logEl.innerHTML = '';
+    logEmpty.style.display = 'none';
+    setRunning(true);
+    dot.className = 'status-dot running';
+    statusTx.textContent = 'STARTING';
+    await window.zayn.agentRun({ hunt });
+    // Poll status file every second
+    if (polling) clearInterval(polling);
+    polling = setInterval(loadStatus, 1000);
+  }
+
+  btnRun.addEventListener('click',  () => startRun(false));
+  btnHunt.addEventListener('click', () => startRun(true));
+  btnDig.addEventListener('click',  () => window.zayn.openDigest());
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    logEl.innerHTML = '';
+    logEmpty.style.display = '';
+    lastLineCount = 0;
+  });
+  document.getElementById('btn-open-log').addEventListener('click', async () => {
+    const log = await window.zayn.agentGetLog().catch(() => []);
+    logEl.innerHTML = '';
+    logEmpty.style.display = 'none';
+    log.slice(0, 10).forEach(entry => {
+      const d = document.createElement('div');
+      d.className = 'log-line';
+      const ranAt = entry.ran_at ? new Date(entry.ran_at).toLocaleString() : '—';
+      d.innerHTML = `<span class="log-time">${ranAt}</span><span class="log-msg">${entry.mode} · ${entry.orders_fulfilled ?? 0} fulfilled · $${parseFloat(entry.estimated_profit || 0).toFixed(2)} profit · ${entry.pending_orders ?? 0} pending</span>`;
+      logEl.appendChild(d);
+    });
+  });
+
+  // Init: load last status + history
+  const initStatus = await window.zayn.agentGetStatus().catch(() => null);
+  if (initStatus?.running) {
+    setRunning(true);
+    if (initStatus.lines?.length) { appendLines(initStatus.lines, true); lastLineCount = initStatus.lines.length; }
+    polling = setInterval(loadStatus, 1000);
+  } else if (initStatus?.lines?.length) {
+    appendLines(initStatus.lines, true);
+    lastLineCount = initStatus.lines.length;
+    setDone(initStatus.error);
+  }
+  await loadHistory();
+})();
+</script>
+</body>
+</html>

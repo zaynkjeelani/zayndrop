@@ -1,0 +1,59 @@
+{
+  "name": "zayndrop",
+  "version": "1.0.0",
+  "description": "zayndrop — eBay dropshipping automation suite",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win",
+    "release": "electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.8.9",
+    "nodemailer": "^9.0.1",
+    "puppeteer": "^21.11.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.zayndrop.app",
+    "productName": "ZaynDrop",
+    "copyright": "Copyright © 2026 Zayn",
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ZaynDrop"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "zaynkjeelani",
+      "repo": "zayndrop",
+      "private": true,
+      "releaseType": "release"
+    },
+    "files": [
+      "src/**/*",
+      "windows/**/*",
+      "assets/**/*",
+      "walter.js",
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/.cache/**/*",
+      "!node_modules/puppeteer/.local-chromium/**/*",
+      "!node_modules/puppeteer/.local-browsers/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

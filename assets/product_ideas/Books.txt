@@ -1,0 +1,100 @@
+1. Cookbooks
+2. Fiction
+3. Nonfiction
+4. Children's books
+5. Vintage books
+6. Art books
+7. Self-help books
+8. History books
+9. Travel books
+10. Poetry books
+11. Science fiction
+12. Mystery books
+13. Romance novels
+14. Biographies
+15. Autobiographies
+16. Religious books
+17. Textbooks
+18. Comic books
+19. Graphic novels
+20. Horror books
+21. Fantasy books
+22. Sports books
+23. Music books
+24. Photography books
+25. Nature books
+26. Business books
+27. Philosophy books
+28. Psychology books
+29. Health books
+30. Fitness books
+31. DIY books
+32. Gardening books
+33. Cooking books
+34. Wine books
+35. Fashion books
+36. Beauty books
+37. Parenting books
+38. Education books
+39. Language books
+40. Reference books
+41. Memoirs
+42. True crime books
+43. War books
+44. Political books
+45. Social science books
+46. Cultural books
+47. Literary criticism
+48. Drama books
+49. Humor books
+50. Inspirational books
+51. Art history books
+52. Design books
+53. Architecture books
+54. Film books
+55. Television books
+56. Pop culture books
+57. Philosophy of science books
+58. Philosophy of religion books
+59. Philosophy of art books
+60. Philosophy of language books
+61. Philosophy of mind books
+62. Philosophy of politics books
+63. Philosophy of ethics books
+64. Philosophy of history books
+65. Philosophy of law books
+66. Philosophy of education books
+67. Philosophy of technology books
+68. Philosophy of literature books
+69. Philosophy of psychology books
+70. Philosophy of economics books
+71. Philosophy of mathematics books
+72. Philosophy of biology books
+73. Philosophy of physics books
+74. Philosophy of chemistry books
+75. Philosophy of anthropology books
+76. Philosophy of sociology books
+77. Philosophy of geography books
+78. Philosophy of medicine books
+79. Philosophy of environment books
+80. Philosophy of sports books
+81. Philosophy of music books
+82. Philosophy of theater books
+83. Philosophy of aesthetics books
+84. Philosophy of love books
+85. Philosophy of friendship books
+86. Philosophy of death books
+87. Philosophy of time books
+88. Philosophy of space books
+89. Philosophy of freedom books
+90. Philosophy of justice books
+91. Philosophy of democracy books
+92. Philosophy of religion books
+93. Philosophy of science fiction books
+94. Philosophy of horror books
+95. Philosophy of fantasy books
+96. Philosophy of romance books
+97. Philosophy of mystery books
+98. Philosophy of comedy books
+99. Philosophy of tragedy books
+100. Philosophy of life books
