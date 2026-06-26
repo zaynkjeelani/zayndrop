@@ -11,11 +11,12 @@ const nodemailer = require('nodemailer');
 // ── Config ──────────────────────────────────────────────────────────────────
 const USER_DATA     = path.join(process.env.APPDATA, 'zayndrop');
 const STATUS_PATH   = path.join(USER_DATA, 'agent-status.json');
-const DB_PATH     = path.join(USER_DATA, 'zayndrop-data-acc1.json');
-const CFG_PATH    = path.join(USER_DATA, 'config.json');
-const LOG_PATH    = path.join(USER_DATA, 'agent-log.json');
-const DIGEST_PATH = path.join(USER_DATA, 'daily-digest.html');
-const PPTR_PROFILE = path.join(USER_DATA, 'puppeteer-profile');
+const DB_PATH       = path.join(USER_DATA, 'zayndrop-data-acc1.json');
+const CFG_PATH      = path.join(USER_DATA, 'config.json');
+const LOG_PATH      = path.join(USER_DATA, 'agent-log.json');
+const DIGEST_PATH   = path.join(USER_DATA, 'daily-digest.html');
+const MEMORY_PATH   = path.join(USER_DATA, 'walter-memory.json');
+const PPTR_PROFILE  = path.join(USER_DATA, 'puppeteer-profile');
 
 const EMAIL_FROM = process.env.ZAYN_EMAIL_FROM || 'jeelanikeelzayn@gmail.com';
 const EMAIL_TO   = process.env.ZAYN_EMAIL_TO   || 'jeelanikeelzayn@gmail.com';
@@ -57,7 +58,7 @@ function statusDone(err) {
 
 function readDB() {
   try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); }
-  catch { return { orders: [], queue: [], bank: [], scout_results: null }; }
+  catch { return { orders: [], queue: [], asin_map: [], scout_results: null }; }
 }
 
 function readConfig() {
@@ -77,14 +78,97 @@ function yesterday() {
   return d.toISOString().slice(0, 10);
 }
 
+function isSunday() {
+  return new Date().getDay() === 0;
+}
+
+// ── Memory ───────────────────────────────────────────────────────────────────
+// walter-memory.json structure:
+// {
+//   observations: [{ date, text, profit, orders }],  — last 30 runs
+//   patterns: [{ extracted_at, text }],               — weekly extracted patterns
+//   asin_history: { [asin]: [{ date, profit, orders }] }
+// }
+
+function readMemory() {
+  try { return JSON.parse(fs.readFileSync(MEMORY_PATH, 'utf8')); }
+  catch { return { observations: [], patterns: [], asin_history: {} }; }
+}
+
+function writeMemory(mem) {
+  try { fs.writeFileSync(MEMORY_PATH, JSON.stringify(mem, null, 2), 'utf8'); } catch {}
+}
+
+function memoryContext(mem) {
+  // Returns a concise text block Walter can read to know what's been happening
+  const recentObs = (mem.observations || []).slice(0, 7);
+  const patterns  = (mem.patterns || []).slice(0, 3);
+
+  let out = '';
+
+  if (recentObs.length) {
+    out += 'MY RECENT OBSERVATIONS (newest first):\n';
+    out += recentObs.map(o => `[${o.date}] ${o.text}`).join('\n');
+    out += '\n\n';
+  }
+
+  if (patterns.length) {
+    out += 'PATTERNS I\'VE IDENTIFIED:\n';
+    out += patterns.map(p => `• ${p.text}`).join('\n');
+    out += '\n\n';
+  }
+
+  return out.trim();
+}
+
+// ── Mood score ────────────────────────────────────────────────────────────────
+// Compares yesterday's numbers against the rolling average in memory.
+// Returns: { label, score, factors }
+//   label: 'great' | 'good' | 'flat' | 'rough' | 'bad'
+function computeMood(context, mem) {
+  const obs = mem.observations || [];
+  const recentProfits = obs.slice(0, 7).map(o => parseFloat(o.profit) || 0);
+  const avgProfit = recentProfits.length
+    ? recentProfits.reduce((a, b) => a + b, 0) / recentProfits.length
+    : 0;
+
+  const todayProfit   = parseFloat(context.yesterday.estimatedProfit) || 0;
+  const profitDelta   = avgProfit > 0 ? (todayProfit - avgProfit) / avgProfit : 0;
+  const refunds       = (context.yesterday.orders || []).filter(o => o.refunded).length;
+  const unfulfilled   = context.pending.count;
+  const zeroOrders    = context.yesterday.ordersReceived === 0;
+
+  let score = 0;
+  score += profitDelta > 0.2 ? 2 : profitDelta > 0 ? 1 : profitDelta < -0.3 ? -2 : -1;
+  score -= refunds >= 3 ? 2 : refunds >= 1 ? 1 : 0;
+  score -= unfulfilled >= 10 ? 1 : 0;
+  score -= zeroOrders ? 1 : 0;
+  score += todayProfit > 50 ? 1 : 0;
+
+  const label = score >= 3 ? 'great' : score >= 1 ? 'good' : score === 0 ? 'flat' : score === -1 ? 'rough' : 'bad';
+
+  return {
+    label,
+    score,
+    avgProfit: avgProfit.toFixed(2),
+    profitDelta: (profitDelta * 100).toFixed(0) + '%',
+    refunds,
+    unfulfilled,
+  };
+}
+
 // ── Business context builder ─────────────────────────────────────────────────
-function buildContext(db) {
+function buildContext(db, mem) {
   const yday = yesterday();
   const allOrders = db.orders || [];
 
   const ydayOrders = allOrders.filter(o => (o.created_at || '').startsWith(yday));
   const fulfilled  = ydayOrders.filter(o => o.amazon_order_id);
   const pending    = allOrders.filter(o => !o.amazon_order_id && o.fulfill_status !== 'cancelled');
+
+  // Find orders pending more than 2 days (stale)
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const staleOrders = pending.filter(o => (o.created_at || '').slice(0, 10) < twoDaysAgo);
 
   let revenue = 0, cost = 0;
   fulfilled.forEach(o => {
@@ -94,9 +178,9 @@ function buildContext(db) {
   const fees   = revenue * 0.13;
   const profit = revenue - cost - fees;
 
-  const bank = (db.asin_map || []); // bank feature unused; asin_map is the real active listing count
+  const asinMap = db.asin_map || [];
 
-  return {
+  const context = {
     date: yday,
     yesterday: {
       ordersReceived:   ydayOrders.length,
@@ -106,22 +190,23 @@ function buildContext(db) {
       ebayFees:         fees.toFixed(2),
       estimatedProfit:  profit.toFixed(2),
       orders: ydayOrders.map(o => ({
-        id:         o.order_id,
-        item:       o.item_title,
-        status:     o.fulfill_status || 'pending',
-        salePrice:  o.sale_price,
-        amazonCost: o.amazon_cost,
-        fulfilled:  !!o.amazon_order_id,
-        messageSent:!!o.message_sent,
+        id:          o.order_id,
+        item:        o.item_title,
+        status:      o.fulfill_status || 'pending',
+        salePrice:   o.sale_price,
+        amazonCost:  o.amazon_cost,
+        fulfilled:   !!o.amazon_order_id,
+        messageSent: !!o.message_sent,
+        refunded:    !!o.refunded,
       }))
     },
     pending: {
       count: pending.length,
+      staleCount: staleOrders.length,
       orders: pending.slice(0, 5).map(o => ({ id: o.order_id, item: o.item_title, created: o.created_at?.slice(0, 10) }))
     },
     activeListings: {
-      count: bank.length,
-      listings: bank.map(b => ({ asin: b.asin, title: b.title, price: b.our_price }))
+      count: asinMap.length,
     },
     queue: { count: (db.queue || []).length },
     allTime: {
@@ -129,9 +214,13 @@ function buildContext(db) {
       totalOrders:    allOrders.length,
     }
   };
+
+  context.mood = computeMood(context, mem);
+
+  return context;
 }
 
-// ── Claude API call (https, no fetch dependency) ─────────────────────────────
+// ── Claude API call ───────────────────────────────────────────────────────────
 function claudeCall(apiKey, system, userMsg, maxTokens = 1024) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
@@ -167,29 +256,103 @@ function claudeCall(apiKey, system, userMsg, maxTokens = 1024) {
   });
 }
 
-// ── Daily digest generation ──────────────────────────────────────────────────
-async function generateDigest(apiKey, context) {
-  return claudeCall(apiKey,
-    `You are ZaynDrop's autonomous business intelligence agent. You analyze daily data for Zayn's eBay dropshipping business (sourcing from Amazon) and provide actionable insights.
+// ── Daily digest generation ───────────────────────────────────────────────────
+// Walter's character: direct, opinionated, first-person. He's been watching
+// this business for months and has a point of view. He's not a report template.
+async function generateDigest(apiKey, context, memCtx) {
+  const moodGuide = {
+    great: 'You\'re energized — it was a genuinely good day and you\'re not hiding it.',
+    good:  'Solid day. Measured optimism, note what\'s working.',
+    flat:  'Neither up nor down. Be honest about that, point at one thing to fix.',
+    rough: 'Don\'t sugarcoat it. Name the problem, what caused it, what to do.',
+    bad:   'Real concern. Be blunt. This isn\'t the time for positivity theater.',
+  };
 
-Business: sells 65W USB-C laptop chargers and Roku remotes on eBay, sourced from Amazon. Multiple accounts.
-Profit formula: sale price − Amazon cost − 13% eBay fees.
-Use ZaynDrop app for automation: fulfillment, scouting, listing.
+  const system = `You are Walter — ZaynDrop's autonomous business agent. You\'ve been watching Zayn\'s eBay dropshipping business every day for months. You source from Amazon and AliExpress, sell on eBay across multiple accounts.
 
-Be direct and specific. Reference actual numbers. No generic advice.`,
+Your character:
+- You speak in first person, directly, like a sharp employee who actually gives a damn
+- You have opinions — you don\'t just report numbers, you tell Zayn what they mean
+- You remember past runs and reference them when relevant
+- You\'re honest when things are bad and genuinely pleased when things are good
+- You never pad, never use corporate speak, never say "it\'s important to note"
+- You write like you\'re texting a smart coworker, not filing a report
+- Max 280 words. No headers or bullet points — just paragraphs.
 
-    `Daily business data for ${context.date}:
-${JSON.stringify(context, null, 2)}
+Today\'s mood: ${context.mood.label} — ${moodGuide[context.mood.label]}`;
 
-Produce a digest with these sections (HTML, inline styles only):
-1. <b>Yesterday at a Glance</b> — key numbers, flag unfulfilled orders or missing messages
-2. <b>Profit Estimate</b> — revenue minus costs minus 13% eBay fees breakdown
-3. <b>What's Working / What's Not</b> — patterns in orders, listings, pricing
-4. <b>Today's Priority</b> — one specific task
+  const memBlock = memCtx ? `\n\nWHAT I KNOW FROM PREVIOUS RUNS:\n${memCtx}\n` : '';
 
-Max 300 words. No CSS frameworks.`,
-    1024
+  const userMsg = `${memBlock}
+TODAY\'S DATA (${context.date}):
+- Orders received yesterday: ${context.yesterday.ordersReceived}
+- Orders fulfilled: ${context.yesterday.ordersFulfilled}
+- Revenue: $${context.yesterday.revenue}
+- Amazon cost: $${context.yesterday.amazonCost}
+- eBay fees (13%): $${context.yesterday.ebayFees}
+- Estimated profit: $${context.yesterday.estimatedProfit}
+- Mood score vs 7-day avg: ${context.mood.profitDelta} (${context.mood.label})
+- Pending orders: ${context.pending.count} (${context.pending.staleCount} stale >2 days)
+- Active listings: ${context.activeListings.count}
+- Queue depth: ${context.queue.count}
+- Refunds yesterday: ${context.mood.refunds}
+- All-time fulfilled: ${context.allTime.totalFulfilled} of ${context.allTime.totalOrders} orders
+
+Individual orders yesterday:
+${JSON.stringify(context.yesterday.orders.slice(0, 8), null, 1)}
+
+Write my daily digest. Be yourself — direct, first-person, with a real take on what happened and what Zayn should do today. Reference previous observations if they\'re relevant.`;
+
+  return claudeCall(apiKey, system, userMsg, 700);
+}
+
+// ── Write Walter's observations back to memory ────────────────────────────────
+// After the digest, Walter writes a short first-person note about what he noticed.
+// This gets read back next run so he has continuity.
+async function writeObservation(apiKey, context, digestText, mem) {
+  const obs = await claudeCall(apiKey,
+    `You are Walter, a business agent. Write a SHORT (2-3 sentences max) first-person observation note about today for your own memory. Be specific — mention actual numbers, ASINs, or patterns. This is for your eyes only; you\'ll read it next run to have context. No fluff.`,
+    `Today was ${context.date}. Profit: $${context.yesterday.estimatedProfit}. Orders: ${context.yesterday.ordersReceived} received, ${context.yesterday.ordersFulfilled} fulfilled. Pending: ${context.pending.count} (${context.pending.staleCount} stale). Mood: ${context.mood.label}.
+
+My digest said:
+${digestText.slice(0, 400)}
+
+Write my memory note (2-3 sentences, first person, specific):`,
+    200
   );
+
+  mem.observations = mem.observations || [];
+  mem.observations.unshift({
+    date:    context.date,
+    text:    obs.trim(),
+    profit:  context.yesterday.estimatedProfit,
+    orders:  context.yesterday.ordersFulfilled,
+  });
+  // Keep 30 observations
+  mem.observations = mem.observations.slice(0, 30);
+  return mem;
+}
+
+// ── Weekly pattern extraction (runs on Sunday) ────────────────────────────────
+async function extractPatterns(apiKey, mem) {
+  const recentObs = (mem.observations || []).slice(0, 14);
+  if (recentObs.length < 3) return mem;
+
+  statusLog('Sunday — extracting weekly patterns from observations...');
+
+  const raw = await claudeCall(apiKey,
+    `You are Walter. Based on your recent daily observations, identify 3-5 patterns that are actually meaningful — trends in profit, day-of-week effects, specific products performing consistently well or poorly, recurring fulfillment issues. Be specific. Each pattern is one sentence starting with "I\'ve noticed".`,
+    `My recent observations:\n${recentObs.map(o => `[${o.date}] ${o.text}`).join('\n')}\n\nList 3-5 patterns I should keep in mind:`,
+    400
+  );
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+  mem.patterns = lines.slice(0, 5).map(text => ({
+    extracted_at: new Date().toISOString().slice(0, 10),
+    text: text.replace(/^[-•*\d.]\s*/, ''),
+  }));
+
+  return mem;
 }
 
 // ── AI Picks from scout products ─────────────────────────────────────────────
@@ -251,11 +414,10 @@ async function runFreshHunt(keywords) {
     else if (p.reviews >= 50) s += 12;
     else if (p.reviews >= 10) s += 5;
     if (p.prime) s += 10;
-    s += 12; // unknown eBay competition (no check in nightly for speed)
+    s += 12;
     return Math.min(100, s);
   }
 
-  // Clear stale lock files
   for (const lf of ['SingletonLock', 'SingletonCookie', 'SingletonSocket']) {
     const p = path.join(PPTR_PROFILE, lf);
     if (fs.existsSync(p)) fs.rmSync(p, { force: true });
@@ -342,6 +504,17 @@ function renderPicks(picks, source) {
 </div>`;
 }
 
+// ── Email subject line — reflects mood ────────────────────────────────────────
+function buildSubject(context) {
+  const { date, yesterday: y, mood } = context;
+  const moodEmoji = { great: '🔥', good: '✓', flat: '—', rough: '⚠', bad: '✗' };
+  const emoji = moodEmoji[mood.label] || '·';
+  const profitStr = parseFloat(y.estimatedProfit) >= 0
+    ? `+$${parseFloat(y.estimatedProfit).toFixed(0)}`
+    : `-$${Math.abs(parseFloat(y.estimatedProfit)).toFixed(0)}`;
+  return `Walter ${emoji} ${date} — ${y.ordersFulfilled} fulfilled · ${profitStr} · ${mood.label}`;
+}
+
 // ── Email ─────────────────────────────────────────────────────────────────────
 async function sendEmail(html, subject) {
   if (!EMAIL_PASS) {
@@ -371,7 +544,7 @@ $n.Dispose()
     const tmp = path.join(os.tmpdir(), 'zayndrop-toast.ps1');
     require('fs').writeFileSync(tmp, script, 'utf8');
     execSync(`powershell -NoProfile -NonInteractive -File "${tmp}"`, { timeout: 10000, windowsHide: true });
-  } catch (_) { /* toast failure is non-fatal */ }
+  } catch (_) {}
 }
 
 // ── Run log ───────────────────────────────────────────────────────────────────
@@ -396,13 +569,24 @@ async function main() {
     process.exit(1);
   }
 
+  // ── Load memory ────────────────────────────────────────────────────────────
+  statusLog('Loading memory...');
+  let mem = readMemory();
+  const memCtx = memoryContext(mem);
+  if (mem.observations?.length) {
+    statusLog(`Memory: ${mem.observations.length} past observations, ${mem.patterns?.length || 0} patterns`);
+  } else {
+    statusLog('Memory: first run — no history yet');
+  }
+
+  // ── Business data ──────────────────────────────────────────────────────────
   statusLog('Reading business data...');
   const db      = readDB();
-  const context = buildContext(db);
+  const context = buildContext(db, mem);
 
   statusLog(`Yesterday: ${context.yesterday.ordersReceived} orders received, ${context.yesterday.ordersFulfilled} fulfilled`);
-  statusLog(`Estimated profit: $${context.yesterday.estimatedProfit} (after Amazon cost + 13% fees)`);
-  statusLog(`Pending orders: ${context.pending.count} | Active listings: ${context.activeListings.count} | Queue: ${context.queue.count}`);
+  statusLog(`Profit: $${context.yesterday.estimatedProfit} | Mood: ${context.mood.label} (${context.mood.profitDelta} vs avg)`);
+  statusLog(`Pending: ${context.pending.count} (${context.pending.staleCount} stale) | Listings: ${context.activeListings.count} | Queue: ${context.queue.count}`);
 
   // ── Scout ──────────────────────────────────────────────────────────────────
   let scoutProducts = null;
@@ -439,9 +623,9 @@ async function main() {
       const picks = await runAIPicks(apiKey, scoutProducts);
       if (picks?.length) {
         picksHtml = renderPicks(picks, scoutSource);
-        const buys = picks.filter(p => p.verdict === 'STRONG BUY' || p.verdict === 'BUY').length;
+        const buys   = picks.filter(p => p.verdict === 'STRONG BUY' || p.verdict === 'BUY').length;
         const strong = picks.filter(p => p.verdict === 'STRONG BUY').length;
-        statusLog(`AI Picks complete — ${strong} STRONG BUY, ${buys - strong} BUY, ${picks.length - buys} WATCH/SKIP`);
+        statusLog(`AI Picks: ${strong} STRONG BUY, ${buys - strong} BUY, ${picks.length - buys} WATCH/SKIP`);
       }
     } catch (e) {
       statusLog(`⚠ AI Picks failed: ${e.message}`);
@@ -449,24 +633,43 @@ async function main() {
   }
 
   // ── Digest ─────────────────────────────────────────────────────────────────
-  statusLog('Generating business digest...');
-  const digestBody = await generateDigest(apiKey, context);
+  statusLog('Generating digest...');
+  const digestBody = await generateDigest(apiKey, context, memCtx);
 
-  const subject = `ZaynDrop Daily — ${context.date} | ${context.yesterday.ordersFulfilled} fulfilled | $${context.yesterday.estimatedProfit} profit`;
+  // ── Write observation to memory ────────────────────────────────────────────
+  statusLog('Writing observation to memory...');
+  try {
+    mem = await writeObservation(apiKey, context, digestBody, mem);
+    if (isSunday()) {
+      mem = await extractPatterns(apiKey, mem);
+    }
+    writeMemory(mem);
+    statusLog(`Memory updated — ${mem.observations.length} observations stored`);
+  } catch (e) {
+    statusLog(`⚠ Memory write failed: ${e.message}`);
+  }
+
+  // ── Build and send ─────────────────────────────────────────────────────────
+  const subject = buildSubject(context);
+
+  const moodColor = { great: '#00d4aa', good: '#c8f04a', flat: '#888', rough: '#f0a040', bad: '#e84545' };
+  const headerColor = moodColor[context.mood.label] || '#c8f04a';
 
   const fullHtml = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>${subject}</title></head>
-<body style="font-family:monospace;max-width:700px;margin:40px auto;color:#1a1a1a;background:#f9f9f9;padding:24px;border-radius:8px;line-height:1.5">
-  <h2 style="color:#c8f04a;background:#1a1a1a;padding:12px 16px;border-radius:4px;margin:0 0 20px">
-    ⬡ ZaynDrop Daily Digest — ${context.date}
-  </h2>
-  ${digestBody}
+<body style="font-family:monospace;max-width:700px;margin:40px auto;color:#1a1a1a;background:#f9f9f9;padding:24px;border-radius:8px;line-height:1.6">
+  <div style="background:#1a1a1a;padding:14px 18px;border-radius:4px;margin:0 0 20px;display:flex;align-items:center;justify-content:space-between">
+    <span style="color:${headerColor};font-size:16px;font-weight:700">⬡ Walter · ${context.date}</span>
+    <span style="color:#888;font-size:11px">${context.mood.label.toUpperCase()} · ${context.mood.profitDelta} vs avg</span>
+  </div>
+  <div style="font-size:14px;line-height:1.7;color:#1a1a1a">${digestBody.replace(/\n/g, '<br>')}</div>
   ${picksHtml}
   <hr style="margin:24px 0;border:1px solid #ddd">
   <p style="font-size:11px;color:#888">
-    Generated ${new Date().toLocaleString()} · mode: ${doHunt ? 'fresh hunt' : 'saved results'}<br>
-    ${context.yesterday.ordersReceived} orders yesterday · ${context.pending.count} pending · ${context.activeListings.count} live listings · ${scoutProducts?.length || 0} scout products analyzed
+    ${context.yesterday.ordersReceived} orders · ${context.yesterday.ordersFulfilled} fulfilled · $${context.yesterday.estimatedProfit} profit · ${context.pending.count} pending<br>
+    ${mem.observations.length} memory entries · ${mem.patterns?.length || 0} patterns · ${scoutProducts?.length || 0} scout products analyzed<br>
+    Generated ${new Date().toLocaleString()} · mode: ${doHunt ? 'fresh hunt' : 'saved results'}
   </p>
 </body>
 </html>`;
@@ -480,18 +683,22 @@ async function main() {
   appendLog({
     date:             context.date,
     mode:             doHunt ? 'hunt' : 'saved',
+    mood:             context.mood.label,
     orders_received:  context.yesterday.ordersReceived,
     orders_fulfilled: context.yesterday.ordersFulfilled,
     estimated_profit: context.yesterday.estimatedProfit,
     pending_orders:   context.pending.count,
     scout_products:   scoutProducts?.length || 0,
+    memory_entries:   mem.observations.length,
   });
 
-  statusLog('✓ Agent finished');
+  statusLog('✓ Walter done');
   statusDone(null);
 
-  toast('Walter ✓',
-    `${context.yesterday.ordersFulfilled} fulfilled · $${context.yesterday.estimatedProfit} profit · ${context.pending.count} pending`);
+  const toastMsg = context.mood.label === 'bad' || context.mood.label === 'rough'
+    ? `${context.mood.label} day — $${context.yesterday.estimatedProfit} · ${context.pending.count} pending`
+    : `${context.yesterday.ordersFulfilled} fulfilled · $${context.yesterday.estimatedProfit} · ${context.mood.label}`;
+  toast('Walter ✓', toastMsg);
 }
 
 main().catch(err => {

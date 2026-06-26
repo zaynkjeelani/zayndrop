@@ -1,6 +1,6 @@
 {
   "name": "zayndrop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "zayndrop — eBay dropshipping automation suite",
   "author": "Zayn <jeelanikeelzayn@gmail.com>",
   "main": "src/main.js",
